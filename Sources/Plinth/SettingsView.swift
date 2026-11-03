@@ -45,7 +45,7 @@ private struct KnockingSettings: View {
                         } maximumValueLabel: {
                             Image(systemName: "tortoise").foregroundStyle(.secondary)
                         }
-                        Text(String(format: "%.1f s", fish.interval))
+                        Text("\(fish.interval, specifier: "%.1f") s")
                             .monospacedDigit()
                             .frame(width: 44, alignment: .trailing)
                     }
@@ -93,7 +93,7 @@ private struct SkinSettings: View {
             } header: {
                 Text("Your Skins")
             } footer: {
-                Text("A skin is a folder with idle.png, and optionally blink.png and hit.png (or numbered sequences like blink-1.png, blink-2.png), its own mallet.png and impact.png, and skin.json for its name and where the mallet lands. A single image works too.")
+                Text("A skin is a folder with idle.png, and optionally blink.png and hit.png (or numbered sequences like blink-1.png, blink-2.png), its own mallet.png and impact.png, and skin.json for its name, where the mallet lands, and its knock: wood, lacquer, ink, cartoon, pixel, jade, bowl, key, bamboo, stone, piston, or crt. A single image works too.")
                     .settingsFootnote()
             }
         }
