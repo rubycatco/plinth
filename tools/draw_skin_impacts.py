@@ -4,6 +4,8 @@ The key gets a rounded-square cyan pulse; bamboo, stone, piston and CRT get
 thin oval ripples in mint, moss green, amber and phosphor green. All are
 transparent, rendered at 1024 px and downsampled to 256, like the bowl's ripple.
 
+The tibo skin gets a pale blue oval, like its pedestal's rim.
+
 The images are original and released under CC0 (the code itself is MIT).
 
 Usage: python draw_skin_impacts.py <skins-directory>
@@ -25,6 +27,7 @@ for name, color in [
     ("moss-stone", (186, 203, 139)),
     ("piston", (248, 178, 87)),
     ("crt-terminal", (101, 239, 149)),
+    ("tibo", (176, 208, 255)),
 ]:
     if name == "space-key":
         # A rounded square, flattened to sit on the top of the keycap.
