@@ -3,6 +3,7 @@
 The key gets a rounded-square cyan pulse; bamboo, stone, piston and CRT get
 thin oval ripples in mint, moss green, amber and phosphor green. All are
 transparent, rendered at 1024 px and downsampled to 256, like the bowl's ripple.
+The poteto skin gets a warm orange oval, like its pedestal's rim.
 
 The images are original and released under CC0 (the code itself is MIT).
 
@@ -20,6 +21,7 @@ c = (N - 1) / 2
 dx, dy = (x - c) / (N / 2), (y - c) / (N / 2)
 
 for name, color in [
+    ("poteto", (255, 152, 64)),
     ("space-key", (128, 226, 242)),
     ("bamboo-block", (164, 218, 167)),
     ("moss-stone", (186, 203, 139)),
