@@ -1,0 +1,52 @@
+/* Simplified Chinese. Keys are the English text in the code. The fish's own
+   words and their sources are Chinese in every language and are not here. */
+
+/* Menu bar and right-click menu */
+"Knock" = "敲一下";
+"Auto-Knock" = "自动敲击";
+"Pace" = "节奏";
+"Slow · every 2 s" = "慢 · 每 2 秒";
+"Steady · every 1 s" = "稳 · 每 1 秒";
+"Fast · every 0.5 s" = "快 · 每 0.5 秒";
+"Knock as You Type" = "打字时跟着敲";
+"Placement" = "位置";
+"Above windows" = "浮在窗口上方";
+"On the desktop" = "放在桌面上";
+"Skin" = "皮肤";
+"Add Skins…" = "添加皮肤…";
+"Open Skins Folder" = "打开皮肤文件夹";
+"Settings…" = "设置…";
+"Quit Plinth" = "退出 Plinth";
+"Plinth" = "Plinth";
+
+/* The fish */
+"Click to knock · Drag to move · Right-click for options" = "点一下就敲 · 拖动换位置 · 右键看选项";
+"— %@" = "——%@";
+
+/* Settings: Knocking */
+"Knocking" = "敲击";
+"Volume" = "音量";
+"Knock as you type" = "打字时跟着敲";
+"Typing: each key you press, in any app, knocks once. Plinth only notices when a key goes down, never which key, so it needs no special permission." = "打字时跟着敲：在任何 App 里每按一个键，就敲一下。Plinth 只知道键什么时候按下，不知道按的是哪个键，所以不需要特殊权限。";
+"Knock on its own" = "让它自己敲";
+"Every" = "每隔";
+"%.1f s" = "%.1f 秒";
+"Stop after 108 knocks, one turn of a mala" = "敲满 108 下就停，正好念珠一圈";
+"Display" = "显示";
+"Size" = "大小";
+"Small" = "小";
+"Medium" = "中";
+"Large" = "大";
+"Launch at login" = "登录时打开";
+
+/* Settings: Skins */
+"Skins" = "皮肤";
+"Built In" = "内置";
+"Your Skins" = "你的皮肤";
+"No skins of your own yet." = "还没有你自己的皮肤。";
+"A skin is a folder with idle.png, and optionally blink.png and hit.png (or numbered sequences like blink-1.png, blink-2.png), its own mallet.png and impact.png, and skin.json for its name, where the mallet lands, and its knock: wood, lacquer, ink, cartoon, pixel, jade, bowl, key, bamboo, stone, piston, or crt. A single image works too." = "皮肤是一个文件夹，必须有 idle.png。眨眼和被敲中的画面可以放 blink.png、hit.png，也可以是 blink-1.png、blink-2.png 这样的编号序列；还可以带自己的 mallet.png 和 impact.png，再用 skin.json 写上名字、锤子的落点，以及敲击声：wood、lacquer、ink、cartoon、pixel、jade、bowl、key、bamboo、stone、piston、crt。单独一张图片也能当皮肤。";
+"Choose images, or skin folders that contain idle.png" = "选择图片，或包含 idle.png 的皮肤文件夹";
+
+/* Settings: Why a Fish */
+"Why a Fish" = "为何是鱼";
+"Knocking earns no merit." = "敲木鱼，不积功德。";

@@ -9,8 +9,8 @@ enum Placement: String, CaseIterable, Identifiable {
     var id: Self { self }
     var title: String {
         switch self {
-        case .floating: "Above windows"
-        case .desktop: "On the desktop"
+        case .floating: String(localized: "Above windows")
+        case .desktop: String(localized: "On the desktop")
         }
     }
 }
@@ -20,9 +20,9 @@ enum FishSize: String, CaseIterable, Identifiable {
     var id: Self { self }
     var title: String {
         switch self {
-        case .small: "Small"
-        case .medium: "Medium"
-        case .large: "Large"
+        case .small: String(localized: "Small")
+        case .medium: String(localized: "Medium")
+        case .large: String(localized: "Large")
         }
     }
     var side: CGFloat {
@@ -202,7 +202,7 @@ final class Fish {
         panel.allowedContentTypes = [.image]
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = true
-        panel.message = "Choose images, or skin folders that contain idle.png"
+        panel.message = String(localized: "Choose images, or skin folders that contain idle.png")
         guard panel.runModal() == .OK else { return }
         var added: [String] = []
         for url in panel.urls {
@@ -247,6 +247,7 @@ final class Fish {
     private func loadSkin() {
         pack = (allSkins.first { $0.id == skin } ?? SkinOption.woodenFish).pack
         menuIcon = pack.idle.menuBarIcon()
+        sound.use(voice: pack.voice)
         skinFileWatcher?.cancel()
         let isOwn = skins.contains { $0.id == skin }
         skinFileWatcher = isOwn ? watch(Self.skinsDirectory.appending(path: skin), [.write, .extend, .delete, .rename]) : nil
@@ -281,64 +282,129 @@ final class Fish {
     }
 }
 
-/// The knock and its hall. Each voice pairs a dry knock with the same knock's
-/// reverberation in a large wooden hall (`knockN-hall.wav`); a small pool of
-/// voices lets fast knocks overlap instead of cutting off.
+/// The worn skin's knock, synthesized, and its hall. A small pool of players
+/// lets fast knocks overlap instead of cutting off.
+///
+/// The engine runs only while a knock rings. A running engine holds the audio
+/// output open, which keeps the Mac from idle sleep and costs CPU even in silence.
+@MainActor
 final class KnockSound {
-    private final class Voice {
-        let dry: AVAudioPlayer
-        let hall: AVAudioPlayer?
-        var started = 0.0
-
-        init(dry: AVAudioPlayer, hall: AVAudioPlayer?) {
-            self.dry = dry
-            self.hall = hall
-        }
+    private struct Slot {
+        let dry: AVAudioPlayerNode
+        let hall: AVAudioPlayerNode
+        var freeAt = 0.0
     }
 
-    private var voices: [Voice] = []
+    /// How long the engine stays up after the last knock has rung out, so a
+    /// run of knocks doesn't start it again for each one.
+    private static let linger = 2.0
+
+    private let engine = AVAudioEngine()
+    private var slots: [Slot] = []
+    private var cache: [KnockSynth.Variation] = []
+    private var voice = ""
+    private var quiet: Task<Void, Never>?
+    private let mono = AVAudioFormat(standardFormatWithSampleRate: Double(KnockSynth.sampleRate), channels: 1)!
+    private let stereo = AVAudioFormat(standardFormatWithSampleRate: Double(KnockSynth.sampleRate), channels: 2)!
 
     init() {
-        for i in 1...3 {
-            guard let dryURL = Bundle.main.url(forResource: "knock\(i)", withExtension: "wav") else { continue }
-            let hallURL = Bundle.main.url(forResource: "knock\(i)-hall", withExtension: "wav")
-            for _ in 0..<4 {
-                guard let dry = Self.player(dryURL) else { continue }
-                voices.append(Voice(dry: dry, hall: hallURL.flatMap(Self.player)))
-            }
+        for _ in 0..<12 {
+            let dry = AVAudioPlayerNode()
+            let hall = AVAudioPlayerNode()
+            engine.attach(dry)
+            engine.attach(hall)
+            engine.connect(dry, to: engine.mainMixerNode, format: mono)
+            engine.connect(hall, to: engine.mainMixerNode, format: stereo)
+            slots.append(Slot(dry: dry, hall: hall))
         }
+        engine.prepare()
     }
 
-    private static func player(_ url: URL) -> AVAudioPlayer? {
-        guard let p = try? AVAudioPlayer(contentsOf: url) else { return nil }
-        p.enableRate = true
-        p.prepareToPlay()
-        return p
+    /// Wear this voice. Unknown names, and none, are the wooden fish.
+    func use(voice name: String?) {
+        let next = KnockSynth.resolve(name)
+        guard next != voice else { return }
+        voice = next
+        cache = KnockSynth.prepare(next)
     }
 
     /// Play one knock. `bloom` (0...1) is how much of the hall rings with it;
     /// a rushed knock is also a little quieter.
     func play(volume: Float, bloom: Float) {
-        // A voice free for this knock (a rushed knock needs only the dry
-        // player), or else the one that started longest ago.
-        let ringsHall = bloom > 0.01
-        let free = voices.filter { !$0.dry.isPlaying && !(ringsHall && $0.hall?.isPlaying == true) }
-        guard let voice = free.randomElement() ?? voices.min(by: { $0.started < $1.started }) else { return }
-        voice.started = ProcessInfo.processInfo.systemUptime
+        guard !cache.isEmpty, !slots.isEmpty else { return }
+        // A player node raises an exception if played while its engine is down.
+        if !engine.isRunning {
+            do { try engine.start() } catch { return }
+        }
+        let now = ProcessInfo.processInfo.systemUptime
+        let index = slots.indices.filter { slots[$0].freeAt <= now }.randomElement()
+            ?? slots.indices.min { slots[$0].freeAt < slots[$1].freeAt }!
+        let variation = cache.randomElement()!
         // No two knocks are quite the same.
-        let rate = Float.random(in: 0.97...1.03)
+        let rate = Float.random(in: 0.98...1.02)
         let gain = volume * .random(in: 0.88...1.0)
-        start(voice.dry, rate: rate, volume: gain * (0.8 + 0.2 * bloom))
-        if let hall = voice.hall, ringsHall {
-            start(hall, rate: rate, volume: gain * bloom)
+        let ringsHall = bloom > 0.01
+        guard let dry = buffer(variation.dry, format: mono, rate: rate) else { return }
+        start(slots[index].dry, dry, volume: gain * (0.8 + 0.2 * bloom))
+        var until = now + Double(dry.frameLength) / Double(KnockSynth.sampleRate)
+        if ringsHall, let hall = buffer(variation.left, variation.right, format: stereo, rate: rate) {
+            start(slots[index].hall, hall, volume: gain * bloom)
+            until = max(until, now + Double(hall.frameLength) / Double(KnockSynth.sampleRate))
+        } else {
+            slots[index].hall.stop()
+        }
+        slots[index].freeAt = until
+        pauseWhenQuiet()
+    }
+
+    /// Pause the engine once every knock has rung out, plus `linger`.
+    private func pauseWhenQuiet() {
+        quiet?.cancel()
+        let ringsUntil = slots.map(\.freeAt).max() ?? 0
+        let wait = ringsUntil + Self.linger - ProcessInfo.processInfo.systemUptime
+        quiet = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(max(wait, 0)))
+            guard !Task.isCancelled, let self else { return }
+            self.engine.pause()
         }
     }
 
-    private func start(_ player: AVAudioPlayer, rate: Float, volume: Float) {
-        player.stop()
-        player.currentTime = 0
-        player.rate = rate
-        player.volume = volume
-        player.play()
+    private func start(_ node: AVAudioPlayerNode, _ buffer: AVAudioPCMBuffer, volume: Float) {
+        node.stop()
+        node.volume = volume
+        node.scheduleBuffer(buffer, completionHandler: nil)
+        node.play()
+    }
+
+    private func buffer(_ samples: [Float], format: AVAudioFormat, rate: Float) -> AVAudioPCMBuffer? {
+        guard samples.count > 1,
+              let buf = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(Float(samples.count) / rate) + 1),
+              let dst = buf.floatChannelData?[0] else { return nil }
+        buf.frameLength = AVAudioFrameCount(write(samples, into: dst, capacity: Int(buf.frameCapacity), rate: rate))
+        return buf
+    }
+
+    private func buffer(_ left: [Float], _ right: [Float], format: AVAudioFormat, rate: Float) -> AVAudioPCMBuffer? {
+        guard left.count > 1,
+              let buf = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(Float(left.count) / rate) + 1),
+              let l = buf.floatChannelData?[0], let r = buf.floatChannelData?[1] else { return nil }
+        let n = write(left, into: l, capacity: Int(buf.frameCapacity), rate: rate)
+        _ = write(right, into: r, capacity: Int(buf.frameCapacity), rate: rate)
+        buf.frameLength = AVAudioFrameCount(n)
+        return buf
+    }
+
+    private func write(_ samples: [Float], into dst: UnsafeMutablePointer<Float>, capacity: Int, rate: Float) -> Int {
+        var n = 0
+        var pos: Float = 0
+        let last = samples.count - 1
+        while n < capacity && pos < Float(last) {
+            let j = Int(pos)
+            let f = pos - Float(j)
+            dst[n] = samples[j] + (samples[j + 1] - samples[j]) * f
+            pos += rate
+            n += 1
+        }
+        return n
     }
 }

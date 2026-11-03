@@ -1,29 +1,12 @@
 import SwiftUI
 
-/// A skin is a folder of square sprite frames plus a little metadata:
+/// A skin: a folder of square sprite frames (`idle.png`, and optionally
+/// `blink`, `hit`, `mallet.png`, `impact.png`) plus `skin.json` for its name,
+/// strike point and voice, or a single image as an idle-only skin.
 ///
-///     idle.png    resting pose (required)
-///     blink.png   shown for a moment every few seconds (optional)
-///     hit.png     shown right after the mallet lands (optional; without it
-///                 the figure just gives a little under the mallet)
-///     mallet.png  the skin's own mallet, laid out like the shared one: head
-///                 left, grip right, horizontal (optional)
-///     impact.png  the skin's own burst where the mallet lands, drawn as is
-///                 (optional; the shared neon burst is screen-blended, which
-///                 only brightens, so ink or dark colours need their own)
-///     skin.json   {"name": "…", "strike": [x, y]}: the skin's display name,
-///                 and where the mallet head's centre lands, as a fraction of
-///                 the frame, y down (optional)
-///
-/// Blink and hit may also be sequences, `blink-1.png`, `blink-2.png`, …: a
-/// blink plays its frames toward the last (eyes shut) and back again; a hit
-/// plays toward its last frame, holds, and settles back to idle. Every step
-/// cross-dissolves at the display's frame rate, so even one frame moves smoothly.
-///
-/// A single image file in the skins folder also works, as an idle-only skin.
-/// The app composes the animation: idle and blink while waiting; on a knock the
-/// shared mallet swings onto `strike`, the frame moves to hit (or the figure
-/// gives), an impact flash bursts and the sound plays, then it settles back.
+/// docs/SKINS.md specifies the format and how it is drawn and animated. When
+/// this loader or `SpriteFish` changes what a skin can contain or how it looks,
+/// update that document (and docs/SKINS.zh-Hans.md) with it.
 ///
 /// The wooden fishes have no blink or hit frame on purpose: a fish never
 /// closes its eyes (鱼昼夜常醒), not even when struck.
@@ -34,6 +17,8 @@ struct SkinPack {
     var hit: [NSImage] = []
     var mallet: NSImage?
     var impact: NSImage?
+    /// A `KnockSynth` voice. Nil is the wooden fish.
+    var voice: String?
     var strike = CGPoint(x: 0.6, y: 0.3)
 
     static func load(_ url: URL?) -> SkinPack? {
@@ -47,10 +32,11 @@ struct SkinPack {
         guard let idle = frame("idle") else { return nil }
         var pack = SkinPack(idle: idle, blink: frames("blink"), hit: frames("hit"),
                             mallet: frame("mallet"), impact: frame("impact"))
-        struct Meta: Decodable { var name: String?; var strike: [Double]? }
+        struct Meta: Decodable { var name: String?; var strike: [Double]?; var voice: String? }
         if let data = try? Data(contentsOf: url.appending(path: "skin.json")),
            let meta = try? JSONDecoder().decode(Meta.self, from: data) {
             pack.name = meta.name
+            pack.voice = meta.voice
             if let s = meta.strike, s.count == 2 { pack.strike = CGPoint(x: s[0], y: s[1]) }
         }
         return pack
@@ -97,18 +83,25 @@ struct SkinOption: Identifiable {
     let title: String
     let pack: SkinPack
 
-    /// The wooden fish first, then the rest in folder order.
+    /// The wooden fish first, then the rest in folder order. Their names come
+    /// from skin.json in English, and from Skins.strings, keyed by folder, in
+    /// other languages.
     static let builtIn: [SkinOption] = {
         guard let dir = Bundle.main.url(forResource: "Skins", withExtension: nil) else { return [] }
         let names = ((try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? [])
             .sorted { ($0 == "wooden-fish" ? 0 : 1, $0) < ($1 == "wooden-fish" ? 0 : 1, $1) }
         return names.compactMap { name in
             guard let pack = SkinPack.load(dir.appending(path: name)) else { return nil }
-            return SkinOption(id: name == "wooden-fish" ? "" : "builtin/\(name)", title: pack.name ?? name, pack: pack)
+            return SkinOption(id: name == "wooden-fish" ? "" : "builtin/\(name)", title: title(name, pack.name ?? name), pack: pack)
         }
     }()
 
-    static let woodenFish = builtIn.first ?? SkinOption(id: "", title: "Wooden Fish", pack: SkinPack(idle: NSImage()))
+    static let woodenFish = builtIn.first
+        ?? SkinOption(id: "", title: title("wooden-fish", "Wooden Fish"), pack: SkinPack(idle: NSImage()))
+
+    private static func title(_ folder: String, _ english: String) -> String {
+        Bundle.main.localizedString(forKey: folder, value: english, table: "Skins")
+    }
 }
 
 /// Shared sprites, and where the mallet's head and grip sit in its image.
@@ -228,10 +221,11 @@ struct SpriteFish: View {
         let bloom = fish.bloom
         return Image(nsImage: pack.impact ?? Sprite.impact)
             .resizable()
-            .frame(width: size, height: size)
-            .blendMode(pack.impact == nil ? .screen : .normal)
             .keyframeAnimator(initialValue: Flash(), trigger: fish.impacts) { content, v in
-                content.scaleEffect(v.scale * (0.45 + 0.55 * bloom)).opacity(v.opacity * (0.5 + 0.5 * bloom))
+                // Grow the drawing bounds with the pulse, not just its pixels.
+                let diameter = size * v.scale * (0.45 + 0.55 * bloom)
+                content.frame(width: diameter, height: diameter)
+                    .opacity(v.opacity * (0.5 + 0.5 * bloom))
             } keyframes: { _ in
                 KeyframeTrack(\.scale) {
                     LinearKeyframe(0.4, duration: 0.01)
@@ -243,6 +237,7 @@ struct SpriteFish: View {
                     CubicKeyframe(0.0, duration: 0.25)
                 }
             }
+            .blendMode(pack.impact == nil ? .screen : .normal)
             .position(x: pack.strike.x * side, y: pack.strike.y * side + headRadius)
             .allowsHitTesting(false)
     }

@@ -4,12 +4,44 @@ Plinth ships as a disk image signed with a Developer ID certificate and notarize
 
 ## Cut a release
 
+Tag the commit on `main` and push the tag:
+
 ```sh
-git tag v1.1.0
-git push origin v1.1.0
+git tag v1.2.0
+git push origin v1.2.0
 ```
 
-The [Release workflow](../.github/workflows/release.yml) builds `Plinth-1.1.0.dmg` (the tag sets the version), signs and notarizes it, staples the ticket, and publishes it as a GitHub release with generated notes. Running the workflow by hand only builds the disk image and keeps it in the run's artifacts.
+What happens next depends on whether the repository has the signing secrets listed under [One-time setup](#one-time-setup). `gh secret list` shows them.
+
+- **With the secrets**, the [Release workflow](../.github/workflows/release.yml) builds `Plinth-1.2.0.dmg` (the tag sets the version), signs and notarizes it, staples the ticket, and publishes it as a GitHub release with generated notes.
+- **Without them**, the workflow builds an ad hoc signed image, keeps it in the run's artifacts, and publishes nothing. The run still succeeds, with a warning. Build the signed image on your Mac and publish it by hand, as below.
+
+Running the workflow by hand from the Actions tab only builds the disk image and keeps it in the run's artifacts.
+
+### Publishing by hand
+
+With your certificate and notarization profile set up as in [Building a signed image locally](#building-a-signed-image-locally), build from the tagged commit:
+
+```sh
+git switch --detach v1.2.0
+PLINTH_VERSION=1.2.0 \
+PLINTH_BUILD=$(git rev-list --count HEAD) \
+PLINTH_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
+PLINTH_NOTARY_PROFILE=plinth-notary \
+./scripts/make_dmg.sh
+```
+
+Set `PLINTH_VERSION` and `PLINTH_BUILD` as shown. Without them the app keeps the version in `App/Info.plist`, and the image is named after it. `PLINTH_BUILD` matches what the workflow uses: the number of commits up to the tag.
+
+Check the image, then publish it with your notes and its SHA-256:
+
+```sh
+spctl -a -vv -t open --context context:primary-signature build/Plinth-1.2.0.dmg
+shasum -a 256 build/Plinth-1.2.0.dmg
+gh release create v1.2.0 build/Plinth-1.2.0.dmg --title "Plinth 1.2.0" --notes-file notes.md
+```
+
+Earlier releases have notes in English and Simplified Chinese, with install steps and the image's SHA-256. Use them as a template.
 
 ## One-time setup
 
