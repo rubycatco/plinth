@@ -65,7 +65,7 @@ Scripts and other apps can knock too. `open -g plinth://knock` knocks once (`-g`
 make test; open -g plinth://call
 ```
 
-A call is three knocks, as when a stick of incense goes out. Auto-knock and typed knocks keep quiet for it, and the three come after a short quiet, so you hear them over whatever the fish was doing. A knock by hand ends a call early. If Plinth isn't running, either URL opens it, and the fish knocks once it is on screen.
+A call is three knocks, as when a stick of incense goes out. Auto-knock and typed knocks keep quiet for it, and the three come after a short quiet, so you hear them over whatever the fish was doing. A knock by hand ends a call early, and so does a key or a click anywhere once its first knock has sounded: you are back. If Plinth isn't running, either URL opens it, and the fish knocks once it is on screen.
 
 In the *Gateless Gate*, Master Ruiyan called to himself every day, 「主人公」 ("Master!"), and answered himself, 「诺」 ("Yes?"). Then: "Wide awake! Yes. Some other day, don't let anyone fool you! Yes, yes." The fish only calls; answering is up to you.
 

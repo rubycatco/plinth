@@ -264,10 +264,6 @@ private struct AboutSettings: View {
     @Environment(Fish.self) private var fish
     private let inkFish = SkinOption.builtIn.first { $0.id == "builtin/ink-fish" } ?? .woodenFish
 
-    private func knockScrollFish() {
-        fish.knock(byHand: false, preview: true)
-    }
-
     var body: some View {
         VStack(spacing: 0) {
             HStack(alignment: .top, spacing: 0) {
@@ -280,12 +276,12 @@ private struct AboutSettings: View {
                         // The fish sits low in its sprite, under the mallet's arc.
                         .offset(y: -24)
                         // The fish on the scroll is a fish: knock it and it sounds.
-                        .onTapGesture(perform: knockScrollFish)
+                        .onTapGesture { fish.knockPainting() }
                         // VoiceOver reads it as a button that knocks, and can press it.
                         .accessibilityElement()
                         .accessibilityLabel("Knock")
                         .accessibilityAddTraits(.isButton)
-                        .accessibilityAction { knockScrollFish() }
+                        .accessibilityAction { fish.knockPainting() }
                 }
                 .padding(.top, 52)
                 .frame(maxWidth: .infinity)
