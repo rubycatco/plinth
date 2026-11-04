@@ -14,6 +14,7 @@ Many wooden-fish apps float "功德 +1" ("merit +1") over every knock and keep a
 
 - [Features](#features)
 - [Install](#install)
+- [Uninstall](#uninstall)
 - [Usage](#usage)
 - [Skins](#skins)
 - [Languages](#languages)
@@ -44,6 +45,26 @@ Plinth runs on macOS 14 Sonoma or later, on Apple silicon and Intel.
 3. If an older Plinth is running, quit it first: right-click the fish and choose **Quit Plinth**.
 
 Releases are signed with a Developer ID and notarized by Apple, so Plinth opens without a Gatekeeper warning. From 1.4.0 on, Plinth updates itself. To build it yourself instead, see [Building from source](#building-from-source).
+
+## Uninstall
+
+「雁无遗踪之意，水无留影之心。」 The geese mean to leave no trace, and the water means to keep no reflection. Plinth keeps your settings, the day's saying, and where the fish sits in its preferences; your own skins in `~/Library/Application Support/Plinth`; and what macOS caches for its update checks. The Mac App Store build keeps all of this in its container instead. Nothing else. If **Launch at login** is on, turn it off in Settings first, then run this in Terminal to remove the app and everything it left:
+
+```sh
+osascript -e 'quit app "Plinth"'
+defaults delete dev.rubycat.plinth
+rm -rf /Applications/Plinth.app \
+  ~/Library/Preferences/dev.rubycat.plinth.plist \
+  ~/Library/"Application Support"/Plinth \
+  ~/Library/Caches/dev.rubycat.plinth \
+  ~/Library/HTTPStorages/dev.rubycat.plinth \
+  ~/Library/HTTPStorages/dev.rubycat.plinth.binarycookies \
+  ~/Library/Containers/dev.rubycat.plinth \
+  ~/Library/"Application Scripts"/dev.rubycat.plinth \
+  "$(getconf DARWIN_USER_CACHE_DIR)dev.rubycat.plinth"
+```
+
+Your own skins go too; copy them out first if you want to keep them.
 
 ## Usage
 
