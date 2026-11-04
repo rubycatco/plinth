@@ -43,6 +43,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         panel.setFrameAutosaveName("PlinthPanel")
         fish.onWindowChange = { [weak self] in self?.layoutPanel() }
+        // The desktop widget's Knock button, from the widget's own process.
+        DistributedNotificationCenter.default().addObserver(forName: .init("dev.rubycat.plinth.knock"), object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { Fish.shared.knock(byHand: false) }
+        }
         // The knock comes from where the fish sits, and follows it when dragged.
         NotificationCenter.default.addObserver(forName: NSWindow.didMoveNotification, object: panel, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.placeSound() }

@@ -17,6 +17,13 @@ let package = Package(
             // Sparkle.framework sits next to the binary after `swift build`,
             // and in Contents/Frameworks in the app.
             linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@loader_path",
-                                           "-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])])
+                                           "-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]),
+        // The desktop widget, an app extension that scripts/build_app.sh
+        // packs into Contents/PlugIns.
+        .executableTarget(
+            name: "PlinthWidget",
+            path: "Sources/PlinthWidget",
+            swiftSettings: [.unsafeFlags(["-application-extension"])],
+            linkerSettings: [.unsafeFlags(["-Xlinker", "-application_extension"])]),
     ]
 )
