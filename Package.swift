@@ -24,6 +24,7 @@ let package = Package(
             // Sparkle.framework sits next to the binary after `swift build`,
             // and in Contents/Frameworks in the app.
             linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@loader_path",
-                                           "-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])])
+                                           "-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]),
+        .testTarget(name: "PlinthTests", dependencies: ["Plinth"])
     ]
 )
