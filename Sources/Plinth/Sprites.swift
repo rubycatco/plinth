@@ -317,7 +317,9 @@ struct SpriteFish: View {
             } keyframes: { _ in
                 KeyframeTrack(\.scale) {
                     LinearKeyframe(0.4, duration: 0.01)
-                    CubicKeyframe(1.15, duration: 0.3)
+                    // Start the bloom at rest: inheriting the fast reset's
+                    // velocity on repeated knocks sends its size below zero.
+                    CubicKeyframe(1.15, duration: 0.3, startVelocity: 0, endVelocity: 0)
                 }
                 KeyframeTrack(\.opacity) {
                     LinearKeyframe(1.0, duration: 0.01)
