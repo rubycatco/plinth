@@ -142,6 +142,8 @@ final class Fish {
     /// before the last knock, and time after it for the held mallet to rise.
     static let callStrokes: [(gap: Double, force: Float)] = [(1.6, 0.38), (1.6, 0.56), (2.4, 0.78)]
     static let callRest = 2.0
+    /// How long a call lasts when no one answers it.
+    static let callLength = callStrokes.reduce(0) { $0 + $1.gap } + callRest
     /// The bell: after this long at the keyboard with no rest of `rest`, typed
     /// knocks and auto-knock fall quiet, and after `bellQuiet` one knock rings
     /// in full, set apart from them as a hall's signal is; they keep quiet
@@ -734,10 +736,13 @@ final class Fish {
             try? await Task.sleep(for: .seconds(stick.duration))
             guard let self, !Task.isCancelled else { return }
             // The spent stick stays while the ember dies and its last smoke
-            // drifts away under the call. A new stick lit meanwhile ends
+            // drifts away under the call: as long as a call lasts, even one
+            // answered at its first knock. A new stick lit meanwhile ends
             // this one's.
+            let out = ContinuousClock.now
             call()
             await callTask?.value
+            try? await Task.sleep(until: out + .seconds(Self.callLength), clock: .continuous)
             guard !Task.isCancelled else { return }
             incense = nil
             incenseTask = nil

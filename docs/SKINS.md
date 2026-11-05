@@ -139,7 +139,7 @@ At the moment of impact the handle rises 15° above horizontal toward the grip. 
 
 The mallet rests on the wood for 0.42 seconds, then lifts over 0.85 seconds without bouncing (压槌) on: the 108th auto-knock with **Stop after 108**; a rested knock by hand (more than 90% bloom); the third call knock; the fifteenth **Quickening** knock; the incense's opening knock; and the long-typing bell. Ordinary and typed knocks keep their rebound. A new knock interrupts the hold; a drag before impact still cancels the swing. This uses the same mallet and strike point, with no extra skin files or keys, and remains bounce-free with Reduce Motion.
 
-Lighting incense hushes typed knocks for about 15 seconds and pauses auto-knock until the closing call ends or the incense is put out early. A pause preserves auto-knock's enabled setting and its round; cancelled swings do not count as landings. The long-typing bell waits three quiet seconds before its held knock, followed by about 15 quiet seconds. Hand knocks and settings previews remain available.
+Lighting incense hushes typed knocks for about 15 seconds and pauses auto-knock until the closing call is over and the spent stick has gone, or until the incense is put out early. A pause preserves auto-knock's enabled setting and its round; cancelled swings do not count as landings. The long-typing bell waits three quiet seconds before its held knock, followed by about 15 quiet seconds. Hand knocks and settings previews remain available.
 
 ## The burst
 
