@@ -56,7 +56,7 @@ struct IncenseView: View {
         // The pedestal's neon falls on the side of the bowl facing it: the
         // bowl, tinted by the light, is added again, so its lit glaze catches
         // it and the shadows stay dark.
-        if let glow = fish.pack.glow {
+        if let glow = fish.pack.glow.map(Color.init) {
             var lit = gc
             lit.clipToLayer { mask in
                 mask.fill(Path(censer), with: .linearGradient(
