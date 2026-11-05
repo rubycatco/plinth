@@ -122,6 +122,9 @@ def strike(tone, base, seed, force=REF_FORCE, place=0.0, warmth=0.0):
     hard = max(force, .05) / REF_FORCE
     edge = min(abs(place), 1)
     w = min(max(warmth, -1), 1)
+    # Past the evening board, softer still into the deep night, with no step at 0.7.
+    late = max((w - .7) / .3, 0)
+    night = late * late * (3 - 2 * late)
     base = base * (1 + .004 * (force - REF_FORCE)) * (1 + .012 * edge)
     rng = Rng(seed)
     n = int(np.float32(tone["length"]) * np.float32(SR))  # in Float, as Swift counts it
@@ -143,11 +146,11 @@ def strike(tone, base, seed, force=REF_FORCE, place=0.0, warmth=0.0):
         elif ratio > 1:
             amp *= 1 + .5 * edge
         if body:
-            amp *= 1 + .12 * w
-            tau *= 1 + .08 * w
+            amp *= 1 + .20 * w + .10 * night
+            tau *= 1 + .10 * w + .04 * night
         elif ratio > 1:
-            amp *= ratio ** (-.08 * w)
-            tau *= ratio ** (-.04 * w)
+            amp *= ratio ** (-.18 * w - .12 * night)
+            tau *= ratio ** (-.07 * w - .04 * night)
         f = base * ratio
         if jitter:
             f *= 1 + rng.gaussian() * 0.004
@@ -164,13 +167,17 @@ def strike(tone, base, seed, force=REF_FORCE, place=0.0, warmth=0.0):
     if "noise" in tone:
         amp, tau, lo, hi = tone["noise"]
         amp, lo, hi = amp * hard ** 1.2, lo * hard ** .2, min(hi * hard ** .4, .45 * SR)
-        amp, lo, hi = amp * (1 - .06 * w), lo * 2 ** (-.06 * w), min(hi * 2 ** (-.12 * w), .45 * SR)
+        amp = amp * 2 ** (-.32 * w - .32 * night)
+        lo = lo * 2 ** (-.16 * w - .14 * night)
+        hi = min(hi * 2 ** (-.28 * w - .20 * night), .45 * SR)
         decay = math.exp(-1 / (tau * SR))
         burst = np.array([rng.gaussian() for _ in range(n)]) * decay ** idx
         f0 = math.sqrt(lo * hi)
         b, a = biquad(f0, max(f0 / (hi - lo), .15), True)
         out += amp * lfilter(b, a, burst)
-    att = max(tone["attack"] * (1 / hard) ** .7 * SR, 1)
+    # A warm night's contact is longer and softer; the morning board's shorter.
+    contact = 2 ** (.45 * w + .50 * night)
+    att = max(tone["attack"] * (1 / hard) ** .7 * contact * SR, 1)
     k = min(n, int(att))
     out[:k] *= np.arange(k) / att
     fade = min(n, int(.05 * SR))
@@ -186,7 +193,9 @@ def strike(tone, base, seed, force=REF_FORCE, place=0.0, warmth=0.0):
         for i in range(min(m, n)):
             if i % step == 0:
                 held = (tick.unit() * 2 - 1) * math.exp(-i / (.003 * SR))
-            out[i] += held * .22
+            # Added after the attack's envelope, so it softens with it when warm.
+            soften = 1 - max(w, 0) * (1 - min(i / att, 1))
+            out[i] += held * .22 * (1 - .22 * w - .22 * night) * soften
     return level(out)
 
 

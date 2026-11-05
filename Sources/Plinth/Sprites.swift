@@ -284,7 +284,14 @@ struct SpriteFish: View {
                                        timingCurve: .easeOut)
                         LinearKeyframe(hit, duration: quick ? Fish.quickImpactDelay / 2 : Fish.impactDelay - Fish.liftDuration,
                                        timingCurve: .easeIn)
-                        SpringKeyframe(rest, duration: 0.5, spring: rebound)
+                        if swing.lingers {
+                            // 压槌: rest on the wood, then lift without a bounce.
+                            // A new swing can interrupt this quiet at any time.
+                            LinearKeyframe(hit, duration: 0.42)
+                            LinearKeyframe(rest, duration: 0.85, timingCurve: .easeInOut)
+                        } else {
+                            SpringKeyframe(rest, duration: 0.5, spring: rebound)
+                        }
                     }
                 }
             }

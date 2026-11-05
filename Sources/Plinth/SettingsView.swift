@@ -105,7 +105,7 @@ private struct KnockingSettings: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Each key you press, in any app, knocks once. Plinth never learns which key, and needs no permission.")
                         .settingsFootnote()
-                    Text("After half an hour of typing with no three-minute rest, the fish falls quiet, then knocks once and lets it ring. Typed knocks and auto-knock keep quiet a few breaths. Nothing is counted or kept.")
+                    Text("After half an hour of typing with no three-minute rest, the fish falls quiet for three seconds, then knocks once with a held mallet. Typed knocks and auto-knock stay quiet for three breaths, about 15 seconds. Nothing is counted or kept.")
                         .settingsFootnote()
                     if Microphone.canTell {
                         Text("While another app listens to a microphone, as in a call, only a knock by hand sounds. Plinth never listens itself.")

@@ -43,7 +43,7 @@
 "Clear" = "清除";
 "Space" = "空格";
 "A key, a foot pedal or a Stream Deck button can be the mallet: press it in any app and the fish is knocked by hand. An F-key can stand alone; any other key needs two modifiers, one of them ⌘ or ⌃, so ⌘C, ⌃C and the like keep working." = "一个键、一只脚踏板或一颗 Stream Deck 按键，都可以当作木槌：在任何 App 里按下它，就如亲手敲一下。F 键可以单独用；其他键要配两个修饰键，其中一个是 ⌘ 或 ⌃，这样 ⌘C、⌃C 这类快捷键照常可用。";
-"After half an hour of typing with no three-minute rest, the fish falls quiet, then knocks once and lets it ring. Typed knocks and auto-knock keep quiet a few breaths. Nothing is counted or kept." = "连着打字半小时，中间没歇过三分钟，木鱼静一静，敲一下，余音放尽。打字敲击和自动敲击静几息。不计数，也不记录。";
+"After half an hour of typing with no three-minute rest, the fish falls quiet for three seconds, then knocks once with a held mallet. Typed knocks and auto-knock stay quiet for three breaths, about 15 seconds. Nothing is counted or kept." = "连着打字半小时，中间没歇过三分钟，木鱼先静三秒，再独敲一下，压槌稍驻。打字敲击和自动敲击再静三息，约 15 秒。不计数，也不记录。";
 "Knock on its own" = "让它自己敲";
 "Every" = "每隔";
 "%.1f s" = "%.1f 秒";
@@ -69,7 +69,9 @@
 
 /* Incense */
 "Light Incense" = "点一炷香";
-"%lld minutes" = "%lld 分钟";
+"Half a stick · 25 minutes" = "半炷香 · 25 分钟";
+"One stick · 45 minutes" = "一炷香 · 45 分钟";
+"Long incense · 60 minutes" = "长香 · 60 分钟";
 "Put Out the Incense" = "熄香";
 "Incense" = "香";
 
@@ -92,7 +94,7 @@
 "Quickening" = "起板";
 "Natural" = "随性";
 "Steady: the same quiet between every knock." = "匀速：每一下之间静得一样久。";
-"Quickening (起板): slow, then faster into a roll, as a chant begins; then a rest." = "起板：由慢到快，敲成一串，像诵经开头那样，然后停一停。";
+"Quickening (起板): three slow, firm knocks, then faster and lighter; a pause, a firm closing knock, then a rest." = "起板：起首三慢槌沉稳，随后渐快渐轻；收板前微顿，重落一槌，再歇一歇。";
 "Natural: each gap runs a little long or short, like a hand keeping time." = "随性：每一下的间隔稍长或稍短，像人手打拍子。";
 
 /* Settings: the room the knock rings in */

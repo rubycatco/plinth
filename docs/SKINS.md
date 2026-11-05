@@ -120,6 +120,10 @@ Plinth has no sound files. It synthesizes the knock for the voice you name when 
 
 Every knock is synthesized as the mallet falls, louder and brighter the harder it lands, and with more of the shell and less of the hollow the further from the strike point. Each voice is tuned at a medium blow on the strike point. Every knock rings on in the same wooden room, whose size the listener picks under Settings → Knocking → Space, from a small meditation room to a great hall. The longer the quiet before a knock, from 0.8 seconds up to 20 seconds, the more of the hall rings with it.
 
+The hour and season temper the same voice, rather than replacing it. Morning contact is shorter and clearer. Night contact softens, upper shell modes and mallet noise recede, and voices with a hollow body give it a little more weight and sustain; this deepens smoothly at `warmth > 0.7`. The reference voice at `warmth == 0` is unchanged. Hurried typing separately eases force and high frequencies. **Heard, not seen** blends less direct sound with more of the same chosen hall.
+
+Ritual force is independent of the skin: a call uses 0.38, 0.56, then 0.78, with 1.6 and 2.4 seconds between swings. A fifteen-knock **Quickening** round begins at 0.68, 0.66, 0.64, eases from 0.58 to 0.28 through the accelerating roll, then closes at 0.78 after half an extra beat. These are Plinth's adaptations, not prescribed historical measurements. Ordinary knocks retain their responsive, slightly varying touch.
+
 ## The mallet
 
 Without `mallet.png`, a skin uses the shared [`App/Resources/mallet.png`](../App/Resources/mallet.png). A skin's own mallet must be laid out the same way, because Plinth positions it by fixed points in the image:
@@ -132,6 +136,10 @@ Without `mallet.png`, a skin uses the shared [`App/Resources/mallet.png`](../App
 | Grip | (0.964, 0.505) of the mallet image. The mallet rotates around this point. |
 
 At the moment of impact the handle rises 15° above horizontal toward the grip. At rest, the mallet is raised a further 25°, or `raise` degrees when `skin.json` sets it. A knock from typing skips the small lift before the swing.
+
+The mallet rests on the wood for 0.42 seconds, then lifts over 0.85 seconds without bouncing (压槌) on: the 108th auto-knock with **Stop after 108**; a rested knock by hand (more than 90% bloom); the third call knock; the fifteenth **Quickening** knock; the incense's opening knock; and the long-typing bell. Ordinary and typed knocks keep their rebound. A new knock interrupts the hold; a drag before impact still cancels the swing. This uses the same mallet and strike point, with no extra skin files or keys, and remains bounce-free with Reduce Motion.
+
+Lighting incense hushes typed knocks for about 15 seconds and pauses auto-knock until the closing call is over and the spent stick has gone, or until the incense is put out early. A pause preserves auto-knock's enabled setting and its round; cancelled swings do not count as landings. The long-typing bell waits three quiet seconds before its held knock, followed by about 15 quiet seconds. Hand knocks and settings previews remain available.
 
 ## The burst
 

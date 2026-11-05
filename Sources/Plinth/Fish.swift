@@ -53,7 +53,7 @@ enum Rhythm: String, CaseIterable, Identifiable {
     var about: String {
         switch self {
         case .steady: String(localized: "Steady: the same quiet between every knock.")
-        case .quickening: String(localized: "Quickening (起板): slow, then faster into a roll, as a chant begins; then a rest.")
+        case .quickening: String(localized: "Quickening (起板): three slow, firm knocks, then faster and lighter; a pause, a firm closing knock, then a rest.")
         case .natural: String(localized: "Natural: each gap runs a little long or short, like a hand keeping time.")
         }
     }
@@ -67,21 +67,65 @@ enum Rhythm: String, CaseIterable, Identifiable {
             // A hand keeping time: each gap a little long or short, about 0.7 to 1.4 times.
             return interval * exp(.random(in: -0.35...0.35))
         case .quickening:
-            // 起板: a round of fifteen knocks that starts slow and quickens
-            // into a roll, then a rest before the next round begins.
+            // 起板: three slow knocks, then a lighter roll. Wait half a beat
+            // before the closing knock, and rest before the next round.
             let k = n % 15
             if k == 0 { return n == 0 ? interval : interval * 5 }
-            return max(interval * 2.5 * pow(0.1, Double(k - 1) / 13), 0.15)
+            if k <= 2 { return interval * 2.5 }
+            if k == 14 { return max(interval * 0.25, 0.15) + interval * 0.5 }
+            return max(interval * 2.5 * pow(0.1, Double(k - 2) / 11), 0.15)
+        }
+    }
+
+    /// A quickening hand grows lighter, not louder, as it hurries. Other
+    /// rhythms leave the touch alone. The fifteenth knock settles the round.
+    func stroke(at n: Int) -> (force: Float?, closing: Bool) {
+        guard self == .quickening else { return (nil, false) }
+        let k = n % 15
+        if k == 14 { return (0.78, true) }
+        if k <= 2 { return (0.68 - 0.02 * Float(k), false) }
+        return (0.58 - 0.30 * Float(k - 3) / 10, false)
+    }
+}
+
+/// An incense period, not a stopwatch. Each stick burns a little differently.
+enum IncenseLength: Int, CaseIterable, Identifiable {
+    case half = 25, one = 45, long = 60
+    var id: Self { self }
+    var title: String {
+        switch self {
+        case .half: String(localized: "Half a stick · 25 minutes")
+        case .one: String(localized: "One stick · 45 minutes")
+        case .long: String(localized: "Long incense · 60 minutes")
         }
     }
 }
 
 /// One swing of the mallet. `quick` is the short swing for a typed key;
-/// `calledOff` takes a swing still in the air back up without landing.
+/// `calledOff` takes a swing still in the air back up without landing;
+/// `lingers` rests on the wood before lifting slowly (压槌).
 struct Swing: Equatable {
     var serial = 0
     var quick = false
     var calledOff = false
+    var lingers = false
+}
+
+/// Hurried keys gradually soften the hand; a pause lets it open again.
+/// Only gaps are used, never the keys themselves, and nothing is stored.
+struct TypingCadence {
+    private var settling = 0.0
+
+    mutating func press(after seconds: Double) -> Float {
+        let gap = max(seconds, 0)
+        let hurry = min(max((0.4 - gap) / 0.32, 0), 1)
+        if hurry > settling {
+            settling += (hurry - settling) * 0.22
+        } else {
+            settling = hurry + (settling - hurry) * exp(-gap / 0.8)
+        }
+        return Float(settling)
+    }
 }
 
 @MainActor @Observable
@@ -94,10 +138,12 @@ final class Fish {
     static let liftDuration = 0.05
     /// A typed key gets a short, quick swing, so the knock keeps up with the hand.
     static let quickImpactDelay = 0.03
-    /// A call's three knocks come this far apart, after as long a quiet, and
-    /// the call lasts as long as `callLength`. See `call()`.
-    static let callBeat = 1.6
-    static let callLength = callBeat * 3 + 2
+    /// 开静: first gently, then evenly, then firmly. Leave half a beat more
+    /// before the last knock, and time after it for the held mallet to rise.
+    static let callStrokes: [(gap: Double, force: Float)] = [(1.6, 0.38), (1.6, 0.56), (2.4, 0.78)]
+    static let callRest = 2.0
+    /// How long a call lasts when no one answers it.
+    static let callLength = callStrokes.reduce(0) { $0 + $1.gap } + callRest
     /// The bell: after this long at the keyboard with no rest of `rest`, typed
     /// knocks and auto-knock fall quiet, and after `bellQuiet` one knock rings
     /// in full, set apart from them as a hall's signal is; they keep quiet
@@ -115,6 +161,7 @@ final class Fish {
     @ObservationIgnored private let typing = TypingWatcher()
     @ObservationIgnored private let malletWatcher = MalletKeyWatcher()
     @ObservationIgnored private var autoTask: Task<Void, Never>?
+    @ObservationIgnored private var autoSwing: Task<Void, Never>?
     @ObservationIgnored var onWindowChange: (() -> Void)?
     @ObservationIgnored private var skinWatcher: DispatchSourceFileSystemObject?
     @ObservationIgnored private var skinFileWatcher: DispatchSourceFileSystemObject?
@@ -139,7 +186,8 @@ final class Fish {
     private(set) var impacts = 0
     /// How fully the last knock rang: 0 after a rushed knock, 1 after a long quiet.
     private(set) var bloom = 1.0
-    private(set) var notice: Quote?
+    private(set) var notice: Notice?
+    @ObservationIgnored private var noticeTask: Task<Void, Never>?
     /// Auto-knocks since it was turned on, for Stop after 108.
     private var autoRound = 0
     /// Auto-knocks since the rhythm last changed, so a new rhythm starts at its beginning.
@@ -150,16 +198,19 @@ final class Fish {
     /// The fish calling you back, while it sounds, and when its first knock
     /// landed, from which a key or click anywhere ends the call. See `call()`.
     @ObservationIgnored private var callTask: Task<Void, Never>?
+    @ObservationIgnored private var callSwing: Task<Void, Never>?
     @ObservationIgnored private var callLanded = Double.infinity
     /// When the last key went down, and when the stretch of typing it belongs
     /// to began, on a clock that keeps going while the Mac sleeps, since a
     /// night's sleep is a rest. Kept only for the bell, never stored.
     @ObservationIgnored private var lastTyped = -Double.infinity
     @ObservationIgnored private var typingSince = 0.0
-    /// Until when typed knocks keep quiet, after the bell.
+    @ObservationIgnored private var typingCadence = TypingCadence()
+    /// Until when typed knocks keep quiet, after the bell or lighting incense.
     @ObservationIgnored private var hushUntil = 0.0
     /// The bell's quiet, its knock, and the breaths after it. Auto-knock waits.
     @ObservationIgnored private var bellTask: Task<Void, Never>?
+    @ObservationIgnored private var bellSwing: Task<Void, Never>?
     /// The screens have slept for `darkFor`, and auto-knock rests until they
     /// wake. `restSoon` waits for that, while they sleep.
     @ObservationIgnored private var resting = false
@@ -177,7 +228,11 @@ final class Fish {
     var stopAt108: Bool { didSet { defaults.set(stopAt108, forKey: "stopAt108") } }
     /// Each key pressed in any app knocks once. Typed knocks are never answered.
     var knockAsYouType: Bool {
-        didSet { defaults.set(knockAsYouType, forKey: "knockAsYouType"); watchTyping() }
+        didSet {
+            defaults.set(knockAsYouType, forKey: "knockAsYouType")
+            typingCadence = TypingCadence()
+            watchTyping()
+        }
     }
     /// After a long stretch of typing, one knock to stop and breathe: the fish
     /// that never sleeps, keeping you from dozing off at the keyboard.
@@ -311,25 +366,32 @@ final class Fish {
     /// `at` is where a click landed across the fish, from 0 at its left edge
     /// to 1 at its right. A `preview`, to hear a setting, always sounds and is
     /// never answered. A `full` knock rings as fully as after a long quiet,
-    /// however lately the fish was knocked.
-    func knock(byHand: Bool = true, quick: Bool = false, at x: Double? = nil, preview: Bool = false, full: Bool = false) {
+    /// however lately the fish was knocked. `closing` rests the mallet on the
+    /// wood at a ritual's close; `settling` softens hurried typing.
+    func knock(byHand: Bool = true, quick: Bool = false, at x: Double? = nil, preview: Bool = false,
+               full: Bool = false, closing: Bool = false, settling: Float = 0) {
         // While the fish calls you back, other knocks keep quiet, so the call
         // is heard. A knock by hand, or a setting changed, means you are here,
         // and the call has done its work.
         if callTask != nil {
             if byHand || preview { endCall() } else { return }
         }
-        strike(byHand: byHand, quick: quick, at: x, preview: preview, full: full)
+        strike(byHand: byHand, quick: quick, at: x, preview: preview, full: full, closing: closing, settling: settling)
     }
 
-    private func strike(byHand: Bool, quick: Bool = false, at x: Double? = nil, preview: Bool = false, full: Bool = false) {
+    @discardableResult
+    private func strike(byHand: Bool, quick: Bool = false, at x: Double? = nil, preview: Bool = false,
+                        full: Bool = false, closing: Bool = false, settling: Float = 0,
+                        force: Float? = nil, automatic: Bool = false) -> Task<Void, Never> {
         if byHand {
             quickSwing?.cancel()
             quickSwing = nil
         }
-        swing = Swing(serial: swing.serial + 1, quick: quick)
-        let serial = swing.serial
         let delay = quick ? Self.quickImpactDelay : Self.impactDelay
+        let silence = ProcessInfo.processInfo.systemUptime + delay - lastImpact
+        let lingers = !quick && !preview && (closing || (byHand && (full || Self.bloom(afterSilence: silence) > 0.9)))
+        swing = Swing(serial: swing.serial + 1, quick: quick, lingers: lingers)
+        let serial = swing.serial
         let audible = volume > 0 && (byHand || preview || !quietWhileMicInUse || !Microphone.inUseByOthers())
         // Wake the audio while the mallet is in the air, so the first knock
         // after a quiet lands with the mallet rather than a moment after it.
@@ -341,21 +403,22 @@ final class Fish {
             try? await Task.sleep(for: .seconds(feel))
             guard !Task.isCancelled else { return }
             let deep = (press?.stage ?? 0) >= 2
-            let (force, place) = touch(byHand: byHand, quick: quick, at: x,
+            let (touchForce, place) = touch(byHand: byHand, quick: quick, at: x,
                                        silence: full ? .infinity : ProcessInfo.processInfo.systemUptime + delay - feel - lastImpact)
             // The knock is made while the mallet is in the air.
-            let knock = sound.synthesize(force: force, place: place)
+            let knock = sound.synthesize(force: force ?? touchForce, place: place, settling: quick ? settling : 0)
             try? await Task.sleep(for: .seconds(delay - feel))
             guard !Task.isCancelled else { return }
             if handSwing?.serial == serial { handSwing = nil }
             let samples = await knock.value
             guard !Task.isCancelled else { return }
+            if quick && swing.serial == serial { quickSwing = nil }
             let now = ProcessInfo.processInfo.systemUptime
             bloom = full ? 1 : Self.bloom(afterSilence: now - lastImpact)
             lastImpact = now
             impacts += 1
             if audible {
-                sound.play(samples, volume: Float(volume), bloom: Float(bloom))
+                sound.play(samples, volume: Float(volume), bloom: Float(bloom), unseen: placement == .unseen)
             }
             if byHand && !preview {
                 // A Force Touch trackpad taps back as the mallet lands, harder
@@ -365,9 +428,17 @@ final class Fish {
                                                                  performanceTime: .now)
                 speak()
             }
+            if automatic {
+                autoSwing = nil
+                // Count landings, not swings: a ritual may hush one in the air.
+                autoRound += 1
+                rhythmStep += 1
+                if stopAt108 && autoRound >= 108 { autoKnock = false }
+            }
         }
         if byHand && !preview { handSwing = (serial, swingTask) }
         else if quick { quickSwing = swingTask }
+        return swingTask
     }
 
     /// Make `key` the mallet, or have none. False, and nothing changes, if
@@ -424,7 +495,7 @@ final class Fish {
             let now = ProcessInfo.processInfo.systemUptime
             let bloom = Self.bloom(afterSilence: now - lastImpact)
             lastImpact = now
-            sound.play(samples, volume: Float(volume), bloom: Float(bloom))
+            sound.play(samples, volume: Float(volume), bloom: Float(bloom), unseen: placement == .unseen)
         }
     }
 
@@ -468,7 +539,10 @@ final class Fish {
     /// Place the knock where the fish sits, from the middle of the main
     /// display: `across` in its widths to the right, `up` in its heights.
     func heard(across: Double, up: Double) {
-        sound.place(across: Float(across), up: Float(up))
+        // With no figure to locate, leave screen position behind. The dry
+        // centre is softened in play(), with more of the surrounding hall.
+        sound.place(across: placement == .unseen ? 0 : Float(across),
+                    up: placement == .unseen ? 0 : Float(up))
     }
 
     /// The longer the quiet before a knock, the more fully it rings: none of
@@ -624,41 +698,65 @@ final class Fish {
     }
 
     func show(_ quote: Quote, for seconds: Double = 8) {
-        notice = quote
-        Task {
+        noticeTask?.cancel()
+        notice = Notice(quote: quote)
+        noticeTask = Task {
             try? await Task.sleep(for: .seconds(seconds))
-            if notice == quote { notice = nil }
+            guard !Task.isCancelled else { return }
+            if quote.leavesSilence {
+                notice?.silent = true
+                // The text takes 0.4 seconds to fade, then two empty seconds.
+                try? await Task.sleep(for: .seconds(2.4))
+                guard !Task.isCancelled else { return }
+            }
+            notice = nil
+            noticeTask = nil
         }
     }
 
     /// Light a stick of incense: one knock as it is lit, quiet while it burns,
     /// three knocks as it goes out. The first is 止静, the start of a sitting,
     /// and rings fully even just after a knock. Nothing is counted or kept.
-    func lightIncense(minutes: Int) {
+    func lightIncense(_ length: IncenseLength) {
         incenseTask?.cancel()
-        let stick = Incense(lit: .now, duration: Double(minutes) * 60)
+        bellTask?.cancel()
+        bellTask = nil
+        bellSwing?.cancel()
+        bellSwing = nil
+        pauseAccompaniment()
+        // Draw once per stick: the ember and the closing call share its life.
+        let stick = Incense(lit: .now, duration: Double(length.rawValue) * 60 * .random(in: 0.98...1.02))
         incense = stick
+        let now = Double(clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)) / 1e9
+        hushUntil = max(hushUntil, now + Self.impactDelay + Self.breaths)
         endCall()
-        knock(byHand: false, full: true)
+        knock(byHand: false, full: true, closing: true)
         incenseTask = Task { [weak self] in
             // The continuous clock keeps burning while the Mac sleeps.
             try? await Task.sleep(for: .seconds(stick.duration))
             guard let self, !Task.isCancelled else { return }
             // The spent stick stays while the ember dies and its last smoke
-            // drifts away under the call. A new stick lit meanwhile ends
+            // drifts away under the call: as long as a call lasts, even one
+            // answered at its first knock. A new stick lit meanwhile ends
             // this one's.
+            let out = ContinuousClock.now
             call()
-            try? await Task.sleep(for: .seconds(Self.callLength))
+            await callTask?.value
+            try? await Task.sleep(until: out + .seconds(Self.callLength), clock: .continuous)
             guard !Task.isCancelled else { return }
             incense = nil
+            incenseTask = nil
+            restartAuto()
         }
     }
 
     /// Put the incense out early, without a knock.
     func putOutIncense() {
         incenseTask?.cancel()
+        incenseTask = nil
         incense = nil
         endCall()
+        restartAuto()
     }
 
     /// Call you back, as a stick of incense does when it goes out: three
@@ -671,25 +769,22 @@ final class Fish {
     /// such as the key that started a build, doesn't count.
     func call() {
         guard callTask == nil else { return }
-        autoTask?.cancel()
-        autoTask = nil
+        pauseAccompaniment()
         callLanded = .infinity
         callTask = Task { [weak self] in
-            for _ in 0..<3 {
-                try? await Task.sleep(for: .seconds(Self.callBeat))
+            for (index, stroke) in Self.callStrokes.enumerated() {
+                try? await Task.sleep(for: .seconds(stroke.gap))
                 guard let self, !Task.isCancelled else { return }
                 let answered = max(TypingWatcher.lastEvent(.keyDown), TypingWatcher.lastEvent(.leftMouseDown))
                 if answered > callLanded { return endCall() }
-                strike(byHand: false, full: true)
+                callSwing = strike(byHand: false, full: true, closing: index == 2, force: stroke.force)
                 if callLanded == .infinity {
                     callLanded = ProcessInfo.processInfo.systemUptime + Self.impactDelay
                 }
             }
-            try? await Task.sleep(for: .seconds(Self.callLength - Self.callBeat * 3))
+            try? await Task.sleep(for: .seconds(Self.callRest))
             guard let self, !Task.isCancelled else { return }
-            callTask = nil
-            callLanded = .infinity
-            restartAuto()
+            endCall()
         }
     }
 
@@ -698,6 +793,8 @@ final class Fish {
         guard let callTask else { return }
         callTask.cancel()
         self.callTask = nil
+        callSwing?.cancel()
+        callSwing = nil
         callLanded = .infinity
         restartAuto()
     }
@@ -718,27 +815,28 @@ final class Fish {
             endCall()
         }
         let now = Double(clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)) / 1e9
+        let settling = knockAsYouType ? typingCadence.press(after: now - lastTyped) : 0
         if now - lastTyped > Self.rest { typingSince = now }
         lastTyped = now
         // A call already has your ear; the bell waits for the next key after it.
-        if bell && callTask == nil && bellTask == nil && now - typingSince >= Self.bellAfter {
+        if bell && callTask == nil && bellTask == nil && now >= hushUntil && now - typingSince >= Self.bellAfter {
             typingSince = now
-            hushUntil = now + Self.bellQuiet + Self.breaths
-            autoTask?.cancel()
-            autoTask = nil
+            hushUntil = now + Self.bellQuiet + Self.impactDelay + Self.breaths
+            pauseAccompaniment()
             // A quiet first, so the bell isn't lost among other knocks, and
             // then it rings in full, as the hall's signal it is.
             bellTask = Task { [weak self] in
                 try? await Task.sleep(for: .seconds(Self.bellQuiet))
                 guard let self, !Task.isCancelled else { return }
-                if bell && callTask == nil { strike(byHand: false, full: true) }
-                try? await Task.sleep(for: .seconds(Self.breaths))
+                if bell && callTask == nil { bellSwing = strike(byHand: false, full: true, closing: true) }
+                try? await Task.sleep(for: .seconds(Self.impactDelay + Self.breaths))
                 guard !Task.isCancelled else { return }
                 bellTask = nil
+                bellSwing = nil
                 restartAuto()
             }
         } else if knockAsYouType && now >= hushUntil {
-            knock(byHand: false, quick: true)
+            knock(byHand: false, quick: true, settling: settling)
         }
     }
 
@@ -765,11 +863,23 @@ final class Fish {
         restartAuto()
     }
 
+    /// A hall's signal hushes even an accompaniment swing still in the air.
+    /// Keep the setting and the round, so it can resume where it left off.
+    private func pauseAccompaniment() {
+        autoTask?.cancel()
+        autoTask = nil
+        autoSwing?.cancel()
+        autoSwing = nil
+        quickSwing?.cancel()
+        quickSwing = nil
+    }
+
     private func restartAuto() {
         autoTask?.cancel()
         autoTask = nil
-        guard autoKnock, callTask == nil, bellTask == nil, !resting else { return }
+        guard autoKnock, incense == nil, callTask == nil, bellTask == nil, !resting else { return }
         autoTask = Task { [weak self] in
+            var lastSwing = ProcessInfo.processInfo.systemUptime
             while !Task.isCancelled {
                 guard let next = self.map({ fish in
                     var gap = fish.rhythm.gap(before: fish.rhythmStep, interval: fish.interval)
@@ -777,15 +887,21 @@ final class Fish {
                     // gap wider than the last, and the last rings fully into the quiet.
                     let left = fish.stopAt108 ? 108 - fish.autoRound : 0
                     if (1...3).contains(left) { gap = max(gap, fish.interval) * pow(1.5, Double(4 - left)) }
-                    return (gap: gap, last: left == 1)
+                    return gap
                 }) else { return }
-                try? await Task.sleep(for: .seconds(next.gap))
+                // The gap is between swings, not between the previous landing
+                // and the next swing. Awaiting the landing must not slow the beat.
+                let wait = max(0, next - (ProcessInfo.processInfo.systemUptime - lastSwing))
+                try? await Task.sleep(for: .seconds(wait))
                 guard let self, !Task.isCancelled else { return }
-                knock(byHand: false, full: next.last)
-                autoRound += 1
-                rhythmStep += 1
-                // One turn of the mala, then quiet. The quiet says the rest.
-                if stopAt108 && autoRound >= 108 { autoKnock = false }
+                // Read the option again after sleeping: it may have changed.
+                let last = stopAt108 && autoRound == 107
+                let stroke = rhythm.stroke(at: rhythmStep)
+                lastSwing = ProcessInfo.processInfo.systemUptime
+                let pending = strike(byHand: false, full: last || stroke.closing, closing: last || stroke.closing,
+                                     force: stroke.force, automatic: true)
+                autoSwing = pending
+                await pending.value
             }
         }
     }
@@ -898,7 +1014,7 @@ final class KnockSound {
 
     /// Start synthesizing one knock of the worn voice, or of `voice`, while the
     /// mallet falls, for the hour and the season, and temper the hall to match.
-    func synthesize(force: Float, place: Float, voice: String? = nil) -> Task<[Float], Never> {
+    func synthesize(force: Float, place: Float, voice: String? = nil, settling: Float = 0) -> Task<[Float], Never> {
         let voice = voice ?? self.voice
         let warmth = KnockSynth.warmth(at: .now)
         if abs(warmth - self.warmth) > 0.005 {
@@ -906,7 +1022,7 @@ final class KnockSound {
             mix.temper(damp: KnockSynth.Hall.damp(warmth: warmth))
         }
         return Task.detached(priority: .userInitiated) {
-            KnockSynth.knock(voice, force: force, place: place, warmth: warmth)
+            KnockSynth.knock(voice, force: force, place: place, warmth: warmth, settling: settling)
         }
     }
 
@@ -928,14 +1044,23 @@ final class KnockSound {
     /// Play one knock. `bloom` (0...1) is how much of the hall rings with it;
     /// a rushed knock is also a little quieter. Even a rushed knock sends a
     /// little to the hall, so a run of them builds up in the room together.
-    func play(_ knock: [Float], volume: Float, bloom: Float) {
+    func play(_ knock: [Float], volume: Float, bloom: Float, unseen: Bool = false) {
         guard knock.count > 1, volume > 0, start() else { return }
         let gain = volume * .random(in: 0.92...1.0)
-        mix.add(knock, dry: gain * (0.8 + 0.2 * bloom), send: gain * (0.25 + 0.75 * bloom))
+        let balance = Self.balance(bloom: bloom, unseen: unseen)
+        mix.add(knock, dry: gain * balance.dry, send: gain * balance.send)
         let now = ProcessInfo.processInfo.systemUptime
         let rings = Double(knock.count) / Double(KnockSynth.sampleRate) + tail
         ringsUntil = max(ringsUntil, now + rings)
         pauseWhenQuiet()
+    }
+
+    /// Without a visible fish, less of the point source and more of the hall,
+    /// even in a run of knocks. Keep the chosen room and its ringing tail.
+    static func balance(bloom: Float, unseen: Bool) -> (dry: Float, send: Float) {
+        let bloom = min(max(bloom, 0), 1)
+        return unseen ? (0.44 + 0.11 * bloom, 0.65 + 0.35 * bloom)
+            : (0.8 + 0.2 * bloom, 0.25 + 0.75 * bloom)
     }
 
     /// Pause the engine once every knock has rung out, plus `linger`.
