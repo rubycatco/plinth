@@ -74,10 +74,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// The knock comes from where the fish sits among the displays, as they
     /// are arranged in System Settings, measured from the middle of the main
-    /// display (the one with the menu bar). An unseen fish sits nowhere, so
-    /// its knock comes from straight ahead.
+    /// display (the one with the menu bar). Fish leaves this position behind
+    /// in unseen mode, blending the knock into the surrounding hall instead.
     private func placeSound() {
-        guard Fish.shared.placement != .unseen, let main = NSScreen.screens.first?.frame else {
+        guard let main = NSScreen.screens.first?.frame else {
             return Fish.shared.heard(across: 0, up: 0)
         }
         Fish.shared.heard(across: (panel.frame.midX - main.midX) / main.width,

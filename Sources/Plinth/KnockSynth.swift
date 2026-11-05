@@ -20,10 +20,19 @@ enum KnockSynth {
     /// sweet spot the mallet lands. A harder blow is louder and brighter, a
     /// soft one rounder; off the spot the hollow speaks less and the shell more.
     /// `warmth` is the hour and the season, as `warmth(at:)` gives it.
-    static func knock(_ name: String, force: Float, place: Float, warmth: Float = 0) -> [Float] {
+    /// `settling` is how much a run of hurried keys softens the hand (0...1).
+    static func knock(_ name: String, force: Float, place: Float, warmth: Float = 0, settling: Float = 0) -> [Float] {
+        let settling = min(max(settling, 0), 1)
+        let force = force * (1 - 0.35 * settling)
         let tone = tones[resolve(name)]!
         let base = tone.bases.randomElement()! * .random(in: 0.98...1.02)
-        let out = strike(tone, base: base, seed: .random(in: 1...UInt64.max), force: force, place: place, warmth: warmth)
+        var out = strike(tone, base: base, seed: .random(in: 1...UInt64.max), force: force, place: place, warmth: warmth)
+        if settling > 0 {
+            // After levelling, so neither normalization nor a crushed attack
+            // brings the highs back. The voice keeps its pitch and its body.
+            var filter = Biquad.lowpass(hz: 7000 * pow(0.2, settling))
+            for i in out.indices { out[i] = filter.apply(out[i]) }
+        }
         let loud = pow(max(force, 0.05) / referenceForce, 0.8)
         return out.map { $0 * loud }
     }
@@ -251,17 +260,21 @@ enum KnockSynth {
         // speaks a little longer, and the upper modes a little less and briefer.
         // Cold, dry air the other way. All of it is 1 at warmth 0.
         let w = min(max(warmth, -1), 1)
+        // After the evening board, soften further into the deep night, without
+        // a step at 0.7. The morning's shorter contact stays clear and crisp.
+        let late = max((w - 0.7) / 0.3, 0)
+        let night = late * late * (3 - 2 * late)
         func add(_ ratio: Float, _ amp: Float, _ tau: Float, _ cents: Float, jitter: Bool, body: Bool = false) {
             // A harder blow is a shorter contact, which reaches the higher modes.
             var amp = amp * pow(hard, 0.6 * log2(max(ratio, 0.25)))
             if body { amp *= 1 - 0.4 * edge } else if ratio == 1 { amp *= 1 - 0.3 * edge } else if ratio > 1 { amp *= 1 + 0.5 * edge }
             var tau = tau
             if body {
-                amp *= 1 + 0.12 * w
-                tau *= 1 + 0.08 * w
+                amp *= 1 + 0.20 * w + 0.10 * night
+                tau *= 1 + 0.10 * w + 0.04 * night
             } else if ratio > 1 {
-                amp *= pow(ratio, -0.08 * w)
-                tau *= pow(ratio, -0.04 * w)
+                amp *= pow(ratio, -0.18 * w - 0.12 * night)
+                tau *= pow(ratio, -0.07 * w - 0.04 * night)
             }
             var f = base * ratio
             if jitter { f *= 1 + rng.gaussian() * 0.004 }
@@ -293,9 +306,9 @@ enum KnockSynth {
             noise.low *= pow(hard, 0.2)
             noise.high = min(noise.high * pow(hard, 0.4), 0.45 * sampleRate)
             // A dull, warm room takes the edge off the click; a cold one sharpens it.
-            noise.amp *= 1 - 0.06 * w
-            noise.low *= pow(2, -0.06 * w)
-            noise.high = min(noise.high * pow(2, -0.12 * w), 0.45 * sampleRate)
+            noise.amp *= pow(2, -0.32 * w - 0.32 * night)
+            noise.low *= pow(2, -0.16 * w - 0.14 * night)
+            noise.high = min(noise.high * pow(2, -0.28 * w - 0.20 * night), 0.45 * sampleRate)
             var burst = [Float](repeating: 0, count: n)
             let decay = exp(-1 / (noise.tau * sampleRate))
             var env: Float = 1
@@ -306,7 +319,8 @@ enum KnockSynth {
             var band = Biquad.bandpass(low: noise.low, high: noise.high)
             for i in 0..<n { out[i] += noise.amp * band.apply(burst[i]) }
         }
-        let attackSamples = max(tone.attack * pow(1 / hard, 0.7) * sampleRate, 1)
+        let contact = pow(2, 0.45 * w + 0.50 * night)
+        let attackSamples = max(tone.attack * pow(1 / hard, 0.7) * contact * sampleRate, 1)
         for i in 0..<min(n, Int(attackSamples)) { out[i] *= Float(i) / attackSamples }
         let fade = min(n, Int(0.05 * sampleRate))
         if fade > 1 {
@@ -324,7 +338,10 @@ enum KnockSynth {
             var held: Float = 0
             for i in 0..<min(m, n) {
                 if i % step == 0 { held = (tick.unit() * 2 - 1) * exp(-Float(i) / (0.003 * sampleRate)) }
-                out[i] += held * 0.22
+                // This tick is added after the envelope: it must soften too,
+                // rather than bringing back a hard edge at night.
+                let edge = 1 - max(w, 0) * (1 - min(Float(i) / attackSamples, 1))
+                out[i] += held * 0.22 * (1 - 0.22 * w - 0.22 * night) * edge
             }
         }
         return level(out)

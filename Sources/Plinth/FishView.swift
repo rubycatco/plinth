@@ -84,8 +84,13 @@ struct FishView: View {
 
     /// The fish's few words, when it has something to say. Otherwise nothing.
     @ViewBuilder private var caption: some View {
-        if let quote = fish.notice {
-            QuoteView(quote: quote).bubble()
+        if let notice = fish.notice {
+            QuoteView(quote: notice.quote)
+                // Both the question and its source fade; the bubble keeps
+                // their space, but VoiceOver has no hidden words to read.
+                .opacity(notice.silent ? 0 : 1)
+                .accessibilityHidden(notice.silent)
+                .bubble()
         }
     }
 }
@@ -187,8 +192,8 @@ struct FishMenu: View {
         Toggle("Knock as You Type", isOn: $fish.knockAsYouType)
         if fish.incense == nil {
             Menu("Light Incense") {
-                ForEach([25, 45, 60], id: \.self) { minutes in
-                    Button("\(minutes) minutes") { fish.lightIncense(minutes: minutes) }
+                ForEach(IncenseLength.allCases) { length in
+                    Button(length.title) { fish.lightIncense(length) }
                 }
             }
         } else {
