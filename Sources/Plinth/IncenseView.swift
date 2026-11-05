@@ -1,14 +1,5 @@
+import PlinthCore
 import SwiftUI
-
-/// A stick of incense, lit at `lit`, that burns for `duration` seconds.
-struct Incense: Equatable {
-    let lit: Date
-    let duration: TimeInterval
-
-    func burnt(at date: Date) -> Double {
-        min(max(date.timeIntervalSince(lit) / duration, 0), 1)
-    }
-}
 
 /// A stick in a plain ash bowl beside the fish. A small flame takes as it is
 /// lit and goes out; then the ember glows under a growing cap of ash, which

@@ -134,7 +134,8 @@ The script builds a universal binary (Apple silicon and Intel), assembles `build
 Menus and settings follow your Mac's language: Simplified Chinese when that is your language, English otherwise. The interface strings live in [`App/Resources/zh-Hans.lproj`](App/Resources/zh-Hans.lproj) (`Localizable.strings` for menus and settings, `Skins.strings` for built-in skin names); to add a language, copy that folder to `<language>.lproj`, translate the values, and add the language to `CFBundleLocalizations` in [`App/Info.plist`](App/Info.plist).
 
 ```
-Sources/Plinth/     SwiftUI + AppKit source; KnockSynth.swift synthesizes the knocks
+Sources/Plinth/     the Mac app: SwiftUI + AppKit source
+Sources/PlinthCore/ what doesn't need a Mac: KnockSynth.swift synthesizes the knocks, KnockSound.swift plays them
 App/                Info.plist, app icon, disk image background, and bundled resources (skins, mallet, burst, strings)
 scripts/            build, disk-image, and update-feed scripts
 docs/               skin format, release process, and the README image

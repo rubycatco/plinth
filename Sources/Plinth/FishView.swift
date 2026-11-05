@@ -1,3 +1,4 @@
+import PlinthCore
 import SwiftUI
 
 /// Moves the borderless panel while the fish is dragged.

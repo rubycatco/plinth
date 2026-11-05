@@ -1,27 +1,38 @@
 import Foundation
 
-struct Quote: Identifiable, Equatable {
-    let id = UUID()
-    let text: String
-    let source: String
+public struct Quote: Identifiable, Equatable {
+    public let id = UUID()
+    public let text: String
+    public let source: String
     /// The words leave an empty bubble before it, too, goes away.
-    var leavesSilence = false
+    public var leavesSilence = false
+
+    public init(text: String, source: String, leavesSilence: Bool = false) {
+        self.text = text
+        self.source = source
+        self.leavesSilence = leavesSilence
+    }
 }
 
 /// Keep the words' layout while they fall silent, without replacing them
 /// with a written description of silence.
-struct Notice: Equatable {
-    let quote: Quote
-    var silent = false
+public struct Notice: Equatable {
+    public let quote: Quote
+    public var silent = false
+
+    public init(quote: Quote, silent: Bool = false) {
+        self.quote = quote
+        self.silent = silent
+    }
 }
 
 /// The fish's few words, in the original Chinese, checked against the texts
 /// they cite (CBETA for the Buddhist canon).
-enum Zen {
+public enum Zen {
     /// What the fish says, in order, one line on the first knock by hand each
     /// day, each line once. It opens with Bodhidharma telling Emperor Wu there
     /// is no merit and ends with Vimalakirti's silence; after that, it only knocks.
-    static let sayings = [
+    public static let sayings = [
         Quote(text: "梁武帝问：造寺写经度僧，有何功德？\n达摩曰：并无功德。", source: "《景德传灯录》"),
         Quote(text: "吃茶去。", source: "赵州从谂"),
         Quote(text: "饥来吃饭，困来即眠。", source: "大珠慧海"),
@@ -39,7 +50,7 @@ enum Zen {
     ]
 
     /// Why a fish: from the Baizhang monastic rules, on the wooden fish.
-    static let whyFish = Quote(
+    public static let whyFish = Quote(
         text: "鱼昼夜常醒，刻木象形击之，所以警昏惰也。",
         source: "《敕修百丈清规》")
 }

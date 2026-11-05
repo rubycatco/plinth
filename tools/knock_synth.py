@@ -1,4 +1,4 @@
-"""A numpy port of Sources/Plinth/KnockSynth.swift: the same voices, seeds and
+"""A numpy port of Sources/PlinthCore/KnockSynth.swift: the same voices, seeds and
 hall, so showoff_video.py's soundtrack is the knocks the app plays."""
 import math
 import numpy as np
