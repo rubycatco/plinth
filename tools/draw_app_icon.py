@@ -1,4 +1,4 @@
-"""Draw App/AppIcon.png: the ink fish on a tile of rice paper.
+"""Draw App/AppIcon.png, and the iPhone app's icon: the ink fish on a tile of rice paper.
 
 The same paper and ink as the disk image's background and Settings > Why a
 Fish: the default skin's idle frame, App/Resources/Skins/ink-fish/idle.png,
@@ -9,12 +9,17 @@ tile keeps its shape on a light desktop and on that paper.
 
 The tile is the squircle the icon already has: its alpha is read from
 App/AppIcon.png and kept exactly, so the corners and the 100 px margin stay
-those of a macOS icon. Rendered at 2x and downsampled.
+those of a macOS icon. With --ios, the same tile is drawn for the iPhone
+app instead: the squircle's square, filled to its edges and opaque, as iOS
+rounds an icon itself and refuses one with transparency. Rendered at 2x and
+downsampled.
 Needs numpy and pillow.
 
 The image is original and released under CC0, like the project's other art.
 
 Usage: python draw_app_icon.py <out.png>   (normally App/AppIcon.png)
+       python draw_app_icon.py --ios <out.png>
+           (normally iOS/Plinth/Assets.xcassets/AppIcon.appiconset/AppIcon.png)
 """
 import sys
 from pathlib import Path
@@ -29,7 +34,7 @@ SIDE = 1024
 WORK = 2 * SIDE
 
 
-def main(out):
+def main(out, ios=False):
     mask = Image.open(ROOT / "App/AppIcon.png").getchannel("A")
     rng = np.random.default_rng(7)
     yy, xx = np.mgrid[0:WORK, 0:WORK].astype(np.float32) / WORK
@@ -65,10 +70,15 @@ def main(out):
     a = layer[..., 3:] / 255
     paper = paper * (1 - a) + layer[..., :3] * a
 
-    tile = Image.fromarray(np.clip(paper, 0, 255).astype(np.uint8)).resize((SIDE, SIDE), Image.LANCZOS)
-    tile.putalpha(mask)
+    picture = Image.fromarray(np.clip(paper, 0, 255).astype(np.uint8))
+    if ios:
+        tile = picture.resize((SIDE, SIDE), Image.LANCZOS, box=tuple(2 * v for v in mask.getbbox()))
+    else:
+        tile = picture.resize((SIDE, SIDE), Image.LANCZOS)
+        tile.putalpha(mask)
     tile.save(out, optimize=True)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    ios = sys.argv[1] == "--ios"
+    main(sys.argv[2] if ios else sys.argv[1], ios)
