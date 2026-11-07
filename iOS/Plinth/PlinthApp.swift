@@ -103,11 +103,19 @@ struct FishScreen: View {
         guard #available(iOS 27.1, *), let fold = screen.reservedRegions(kind: .division).first?.frame else {
             return (paper, nil)
         }
-        return fold.height > fold.width
+        let (past, before) = fold.height > fold.width
             ? (CGRect(x: fold.maxX, y: 0, width: paper.maxX - fold.maxX, height: paper.height),
                CGRect(x: 0, y: 0, width: fold.minX, height: paper.height))
             : (CGRect(x: 0, y: fold.maxY, width: paper.width, height: paper.maxY - fold.maxY),
                CGRect(x: 0, y: 0, width: paper.width, height: fold.minY))
+        // In Split View each app has a page to itself, which the fold only
+        // grazes at the edge: the left-hand app has no paper past the fold, the
+        // right-hand one none before it. Then the paper is one page, less that
+        // edge. Room is told by size, as CGRect's width and height are never negative.
+        let room = { (page: CGRect) in page.size.width > 0 && page.size.height > 0 }
+        guard room(before) else { return (past, nil) }
+        guard room(past) else { return (before, nil) }
+        return (past, before)
     }
 }
 
