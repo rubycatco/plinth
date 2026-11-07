@@ -6,7 +6,15 @@ import PlinthCore
 /// headphones, and felt in the hand. As on the Mac, it starts in ink.
 @MainActor @Observable
 final class Fish {
-    let pack: SkinPack
+    /// The worn skin's `SkinOption.id`, kept as the Mac keeps it. A skin is
+    /// stored only once one is chosen; until then, the ink fish.
+    var skin: String {
+        didSet {
+            UserDefaults.standard.set(skin, forKey: "skin")
+            wear()
+        }
+    }
+    private(set) var pack = SkinOption.inkFish.pack
     /// The mallet's latest swing; each new one swings it again.
     private(set) var swing = Swing()
     /// Counts the moments the mallet meets the figure. Nothing else is
@@ -24,17 +32,23 @@ final class Fish {
         // other apps' audio. Switched to silent, the fish is felt, not heard.
         try? AVAudioSession.sharedInstance().setCategory(.ambient)
         try? AVAudioSession.sharedInstance().setActive(true)
-        pack = SkinPack.load(Bundle.main.url(forResource: "Skins", withExtension: nil)?.appending(path: "ink-fish"))
-            ?? SkinPack(idle: SkinImage())
+        skin = UserDefaults.standard.string(forKey: "skin") ?? SkinOption.inkFish.id
+        wear()
+    }
+
+    /// Put on the worn skin and its voice. A skin that no longer ships is the ink fish.
+    private func wear() {
+        pack = (SkinOption.builtIn.first { $0.id == skin } ?? SkinOption.inkFish).pack
         sound.use(voice: pack.voice, space: KnockSynth.Hall.defaultSpace)
     }
 
     /// Knock once, where the finger went down across the fish: 0 at its left
-    /// edge, 1 at its right. After a long quiet, the mallet rests on the wood
-    /// before it lifts (压槌).
-    func knock(at x: Double) {
+    /// edge, 1 at its right, or near the strike point when nothing says
+    /// where. After a long quiet, the mallet rests on the wood before it
+    /// lifts (压槌). A `preview`, to hear a skin just chosen, never rests.
+    func knock(at x: Double? = nil, preview: Bool = false) {
         let rested = KnockSound.bloom(afterSilence: ProcessInfo.processInfo.systemUptime + Swing.impactDelay - lastImpact)
-        swing = Swing(serial: swing.serial + 1, lingers: rested > 0.9)
+        swing = Swing(serial: swing.serial + 1, lingers: !preview && rested > 0.9)
         // Wake the audio, and make the knock, while the mallet is in the air.
         sound.warm(for: Swing.impactDelay)
         let force = Swing.force(rested: Float(rested))
