@@ -135,7 +135,7 @@ Menus and settings follow your Mac's language: Simplified Chinese when that is y
 
 ```
 Sources/Plinth/     the Mac app: SwiftUI + AppKit source
-Sources/PlinthCore/ what doesn't need a Mac: KnockSynth.swift synthesizes the knocks, KnockSound.swift plays them
+Sources/PlinthCore/ what doesn't need a Mac: KnockSynth.swift synthesizes the knocks, KnockSound.swift plays them, Sprites.swift draws the fish in its skin
 App/                Info.plist, app icon, disk image background, and bundled resources (skins, mallet, burst, strings)
 scripts/            build, disk-image, and update-feed scripts
 docs/               skin format, release process, and the README image

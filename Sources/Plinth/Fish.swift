@@ -57,12 +57,6 @@ struct TypingCadence {
 final class Fish {
     static let shared = Fish()
 
-    /// Time from the start of the swing until the mallet meets the wood, and
-    /// how much of it the small lift before the swing takes.
-    static let impactDelay = 0.13
-    static let liftDuration = 0.05
-    /// A typed key gets a short, quick swing, so the knock keeps up with the hand.
-    static let quickImpactDelay = 0.03
     /// 开静: first gently, then evenly, then firmly. Leave half a beat more
     /// before the last knock, and time after it for the held mallet to rise.
     static let callStrokes: [(gap: Double, force: Float)] = [(1.6, 0.38), (1.6, 0.56), (2.4, 0.78)]
@@ -312,9 +306,9 @@ final class Fish {
             quickSwing?.cancel()
             quickSwing = nil
         }
-        let delay = quick ? Self.quickImpactDelay : Self.impactDelay
+        let delay = quick ? Swing.quickImpactDelay : Swing.impactDelay
         let silence = ProcessInfo.processInfo.systemUptime + delay - lastImpact
-        let lingers = !quick && !preview && (closing || (byHand && (full || Self.bloom(afterSilence: silence) > 0.9)))
+        let lingers = !quick && !preview && (closing || (byHand && (full || KnockSound.bloom(afterSilence: silence) > 0.9)))
         swing = Swing(serial: swing.serial + 1, quick: quick, lingers: lingers)
         let serial = swing.serial
         let audible = volume > 0 && (byHand || preview || !quietWhileMicInUse || !Microphone.inUseByOthers())
@@ -323,7 +317,7 @@ final class Fish {
         if audible { sound.warm(for: delay) }
         // A press is read a moment into the swing, once a Force Touch trackpad
         // has felt how firm it is. A typed key has no time to spare.
-        let feel = quick ? 0 : Self.liftDuration
+        let feel = quick ? 0 : Swing.liftDuration
         let swingTask = Task {
             try? await Task.sleep(for: .seconds(feel))
             guard !Task.isCancelled else { return }
@@ -339,7 +333,7 @@ final class Fish {
             guard !Task.isCancelled else { return }
             if quick && swing.serial == serial { quickSwing = nil }
             let now = ProcessInfo.processInfo.systemUptime
-            bloom = full ? 1 : Self.bloom(afterSilence: now - lastImpact)
+            bloom = full ? 1 : KnockSound.bloom(afterSilence: now - lastImpact)
             lastImpact = now
             impacts += 1
             if audible {
@@ -418,7 +412,7 @@ final class Fish {
             let samples = await knock.value
             // It rings in the same hall as the desktop fish.
             let now = ProcessInfo.processInfo.systemUptime
-            let bloom = Self.bloom(afterSilence: now - lastImpact)
+            let bloom = KnockSound.bloom(afterSilence: now - lastImpact)
             lastImpact = now
             sound.play(samples, volume: Float(volume), bloom: Float(bloom), unseen: placement == .unseen)
         }
@@ -428,7 +422,7 @@ final class Fish {
     /// one hardest; a hand in a hurry lands lighter, and a typed key lighter
     /// still. A click off the strike point lands toward the edge.
     private func touch(byHand: Bool, quick: Bool, at x: Double?, silence: Double) -> (force: Float, place: Float) {
-        let rested = Float(Self.bloom(afterSilence: silence))
+        let rested = Float(KnockSound.bloom(afterSilence: silence))
         var force: Float
         if quick {
             force = 0.36 + 0.2 * rested + .random(in: -0.05...0.05)
@@ -436,12 +430,10 @@ final class Fish {
             force = press.stage >= 2 ? 0.95 : 0.4 + 0.4 * press.pressure
             force *= 0.85 + 0.15 * rested
         } else {
-            force = (0.58 + .random(in: -0.07...0.07)) * (0.85 + 0.15 * rested)
+            force = Swing.force(rested: rested)
         }
         press = nil
-        // A quarter of the fish's width off the strike point is the edge.
-        let place = x.map { Float(($0 - pack.strike.x) / 0.25) } ?? .random(in: -0.2...0.2)
-        return (min(max(force, 0.1), 1), min(max(place, -1), 1))
+        return (min(max(force, 0.1), 1), Swing.place(at: x, strike: pack.strike.x))
     }
 
     /// How firmly the latest click on the fish went down, from a Force Touch
@@ -468,14 +460,6 @@ final class Fish {
         // centre is softened in play(), with more of the surrounding hall.
         sound.place(across: placement == .unseen ? 0 : Float(across),
                     up: placement == .unseen ? 0 : Float(up))
-    }
-
-    /// The longer the quiet before a knock, the more fully it rings: none of
-    /// the hall after a rushed knock, all of it after twenty seconds of quiet.
-    static func bloom(afterSilence seconds: Double) -> Double {
-        let x = (log(seconds) - log(0.8)) / (log(20) - log(0.8))
-        let t = min(max(x, 0), 1)
-        return t * t * (3 - 2 * t)
     }
 
     /// The fish has a few things to say and says each of them once: the next
@@ -653,7 +637,7 @@ final class Fish {
         let stick = Incense(lit: .now, duration: Double(length.rawValue) * 60 * .random(in: 0.98...1.02))
         incense = stick
         let now = Double(clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)) / 1e9
-        hushUntil = max(hushUntil, now + Self.impactDelay + Self.breaths)
+        hushUntil = max(hushUntil, now + Swing.impactDelay + Self.breaths)
         endCall()
         knock(byHand: false, full: true, closing: true)
         incenseTask = Task { [weak self] in
@@ -704,7 +688,7 @@ final class Fish {
                 if answered > callLanded { return endCall() }
                 callSwing = strike(byHand: false, full: true, closing: index == 2, force: stroke.force)
                 if callLanded == .infinity {
-                    callLanded = ProcessInfo.processInfo.systemUptime + Self.impactDelay
+                    callLanded = ProcessInfo.processInfo.systemUptime + Swing.impactDelay
                 }
             }
             try? await Task.sleep(for: .seconds(Self.callRest))
@@ -746,7 +730,7 @@ final class Fish {
         // A call already has your ear; the bell waits for the next key after it.
         if bell && callTask == nil && bellTask == nil && now >= hushUntil && now - typingSince >= Self.bellAfter {
             typingSince = now
-            hushUntil = now + Self.bellQuiet + Self.impactDelay + Self.breaths
+            hushUntil = now + Self.bellQuiet + Swing.impactDelay + Self.breaths
             pauseAccompaniment()
             // A quiet first, so the bell isn't lost among other knocks, and
             // then it rings in full, as the hall's signal it is.
@@ -754,7 +738,7 @@ final class Fish {
                 try? await Task.sleep(for: .seconds(Self.bellQuiet))
                 guard let self, !Task.isCancelled else { return }
                 if bell && callTask == nil { bellSwing = strike(byHand: false, full: true, closing: true) }
-                try? await Task.sleep(for: .seconds(Self.impactDelay + Self.breaths))
+                try? await Task.sleep(for: .seconds(Swing.impactDelay + Self.breaths))
                 guard !Task.isCancelled else { return }
                 bellTask = nil
                 bellSwing = nil

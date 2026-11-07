@@ -1,6 +1,7 @@
 import SwiftUI
 import XCTest
 @testable import Plinth
+import PlinthCore
 
 final class ImpactTests: XCTestCase {
     @MainActor
@@ -27,7 +28,7 @@ final class ImpactTests: XCTestCase {
         }
         let pack = SkinPack(idle: clear, mallet: clear, impact: circle)
         let side = 150
-        let host = NSHostingView(rootView: SpriteFish(pack: pack, side: CGFloat(side)).environment(fish))
+        let host = NSHostingView(rootView: WornFish(pack: pack, side: CGFloat(side)).environment(fish))
         host.sizingOptions = []
         let panel = NSPanel(contentRect: NSRect(x: 200, y: 200, width: side, height: side),
                             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)

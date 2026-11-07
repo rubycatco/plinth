@@ -4,8 +4,8 @@ import Foundation
 /// `blink`, `hit`, `mallet.png`, `impact.png`) plus `skin.json` for its name,
 /// strike point, voice and glow, or a single image as an idle-only skin.
 ///
-/// This reads which files a skin has and what its `skin.json` says; the app
-/// decodes the images, as `Image`, with the image type of its platform.
+/// This reads which files a skin has and what its `skin.json` says, and
+/// decodes the images with `image`; `SkinPack` decodes them as the platform's.
 ///
 /// docs/SKINS.md specifies the format and how it is drawn and animated. When
 /// this loader or `SpriteFish` changes what a skin can contain or how it looks,

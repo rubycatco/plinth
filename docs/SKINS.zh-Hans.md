@@ -2,7 +2,7 @@
 
 [English](SKINS.md) · 简体中文
 
-这份文档是 Plinth 皮肤的参考：一款皮肤可以放哪些文件，Plinth 怎么读取，又怎么绘制和播放动画。它描述的是 [`Sources/PlinthCore/Skin.swift`](../Sources/PlinthCore/Skin.swift) 里 `Skin.load` 和 [`Sources/Plinth/Sprites.swift`](../Sources/Plinth/Sprites.swift) 里 `SpriteFish` 的行为。文档和代码对不上时，以代码为准，文档需要修正。
+这份文档是 Plinth 皮肤的参考：一款皮肤可以放哪些文件，Plinth 怎么读取，又怎么绘制和播放动画。它描述的是 [`Sources/PlinthCore/Skin.swift`](../Sources/PlinthCore/Skin.swift) 里 `Skin.load` 和 [`Sources/PlinthCore/Sprites.swift`](../Sources/PlinthCore/Sprites.swift) 里 `SpriteFish` 的行为。文档和代码对不上时，以代码为准，文档需要修正。
 
 ## 皮肤放在哪里
 

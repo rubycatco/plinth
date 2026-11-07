@@ -21,8 +21,8 @@ let package = Package(
     ],
     targets: [
         // What the fish is without a Mac to sit on: the synthesized knock and
-        // the hall it rings in, the rhythms and the incense, and its few words.
-        // Only Foundation and AVFoundation, so another platform can use it too.
+        // the hall it rings in, the rhythms and the incense, its few words, and
+        // the skin it is drawn in. Nothing in it needs a Mac.
         .target(name: "PlinthCore", path: "Sources/PlinthCore"),
         // Resources live in App/Resources and are copied into the .app by
         // scripts/build_app.sh, so the code loads them from Bundle.main.

@@ -2,7 +2,7 @@
 
 English · [简体中文](SKINS.zh-Hans.md)
 
-This is the reference for Plinth skins: which files a skin may contain, how Plinth reads them, and how it draws and animates them. It describes the behaviour of `Skin.load` in [`Sources/PlinthCore/Skin.swift`](../Sources/PlinthCore/Skin.swift) and `SpriteFish` in [`Sources/Plinth/Sprites.swift`](../Sources/Plinth/Sprites.swift). Where this document and the code disagree, the code is right and this document needs fixing.
+This is the reference for Plinth skins: which files a skin may contain, how Plinth reads them, and how it draws and animates them. It describes the behaviour of `Skin.load` in [`Sources/PlinthCore/Skin.swift`](../Sources/PlinthCore/Skin.swift) and `SpriteFish` in [`Sources/PlinthCore/Sprites.swift`](../Sources/PlinthCore/Sprites.swift). Where this document and the code disagree, the code is right and this document needs fixing.
 
 ## Where skins live
 

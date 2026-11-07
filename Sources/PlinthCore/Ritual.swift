@@ -68,6 +68,13 @@ public enum IncenseLength: Int, CaseIterable, Identifiable {
 /// `calledOff` takes a swing still in the air back up without landing;
 /// `lingers` rests on the wood before lifting slowly (压槌).
 public struct Swing: Equatable {
+    /// Time from the start of the swing until the mallet meets the wood, and
+    /// how much of it the small lift before the swing takes.
+    public static let impactDelay = 0.13
+    public static let liftDuration = 0.05
+    /// A typed key gets a short, quick swing, so the knock keeps up with the hand.
+    public static let quickImpactDelay = 0.03
+
     public var serial = 0
     public var quick = false
     public var calledOff = false
@@ -78,6 +85,23 @@ public struct Swing: Equatable {
         self.quick = quick
         self.calledOff = calledOff
         self.lingers = lingers
+    }
+
+    /// How hard the mallet lands when nothing tells how firmly the hand
+    /// pressed, as with a mouse, a finger on glass, or auto-knock: about as
+    /// hard each time, and lighter after a short quiet. `rested` is the
+    /// bloom of that quiet.
+    public static func force(rested: Float) -> Float {
+        (0.58 + .random(in: -0.07...0.07)) * (0.85 + 0.15 * rested)
+    }
+
+    /// Where the mallet lands, from -1 to 1 off the strike point: from `x`
+    /// across the figure, 0 at its left edge and 1 at its right, or near the
+    /// strike point when nothing says where.
+    public static func place(at x: Double?, strike: Double) -> Float {
+        // A quarter of the figure's width off the strike point is the edge.
+        let place = x.map { Float(($0 - strike) / 0.25) } ?? .random(in: -0.2...0.2)
+        return min(max(place, -1), 1)
     }
 }
 

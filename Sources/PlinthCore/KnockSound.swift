@@ -70,6 +70,14 @@ public final class KnockSound {
         return (dry, hall)
     }
 
+    /// The longer the quiet before a knock, the more fully it rings: none of
+    /// the hall after a rushed knock, all of it after twenty seconds of quiet.
+    public nonisolated static func bloom(afterSilence seconds: Double) -> Double {
+        let x = (log(seconds) - log(0.8)) / (log(20) - log(0.8))
+        let t = min(max(x, 0), 1)
+        return t * t * (3 - 2 * t)
+    }
+
     /// Wear this voice, in a room of this size. Unknown names, and none, are
     /// the wooden fish.
     public func use(voice name: String?, space: Float) {
