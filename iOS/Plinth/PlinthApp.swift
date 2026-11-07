@@ -32,8 +32,9 @@ struct FishScreen: View {
     var body: some View {
         VStack(spacing: 0) {
             GeometryReader { screen in
-                // The Mac's largest fish, or smaller on a narrow screen.
-                let side = min(300, min(screen.size.width, screen.size.height) * 0.8)
+                let page = Self.page(in: screen)
+                // The Mac's largest fish, or smaller on a narrow page.
+                let side = min(300, min(page.width, page.height) * 0.8)
                 SpriteFish(pack: fish.pack, side: side, swing: fish.swing, impacts: fish.impacts, bloom: fish.bloom)
                     .frame(width: side, height: side)
                     .contentShape(Rectangle())
@@ -49,7 +50,9 @@ struct FishScreen: View {
                     .accessibilityLabel("Knock")
                     .accessibilityAddTraits(.isButton)
                     .accessibilityAction { fish.knock(at: fish.pack.strike.x) }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .position(x: page.midX, y: page.midY)
+                    // As the fold comes and goes, the fish moves over rather than jumps.
+                    .animation(.smooth(duration: 0.4), value: page.origin)
             }
             .overlay(alignment: .bottomTrailing) {
                 Button { choosing.toggle() } label: {
@@ -71,6 +74,20 @@ struct FishScreen: View {
         .statusBarHidden()
         // The fish rises as the skins come up, and stays to be knocked.
         .animation(.smooth(duration: 0.3), value: choosing)
+    }
+
+    /// The part of the paper the fish sits on: all of it, or, while the fold
+    /// of a half-open iPhone Duo divides it, the part past the fold. Held like
+    /// a book, that is the right-hand page; set down like a laptop, the half
+    /// that lies on the table, where a knock doesn't rock the phone.
+    private static func page(in screen: GeometryProxy) -> CGRect {
+        let paper = CGRect(origin: .zero, size: screen.size)
+        guard #available(iOS 27.1, *), let fold = screen.reservedRegions(kind: .division).first?.frame else {
+            return paper
+        }
+        return fold.height > fold.width
+            ? CGRect(x: fold.maxX, y: 0, width: paper.maxX - fold.maxX, height: paper.height)
+            : CGRect(x: 0, y: fold.maxY, width: paper.width, height: paper.maxY - fold.maxY)
     }
 }
 
