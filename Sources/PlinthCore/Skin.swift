@@ -99,3 +99,33 @@ public struct SkinGlow: Equatable {
         blue = Double(v & 0xFF) / 255
     }
 }
+
+/// What a file is on disk, cheap to read: enough to tell when a skin has
+/// changed without decoding its images. The status-change time moves on
+/// every write, rename or replacement, even one that keeps the old
+/// modification date, as a Finder copy does.
+public struct FileStamp: Equatable {
+    var name: String
+    var inode: UInt64
+    var size: Int64
+    var changed: timespec
+
+    public static func == (a: FileStamp, b: FileStamp) -> Bool {
+        a.name == b.name && a.inode == b.inode && a.size == b.size
+            && a.changed.tv_sec == b.changed.tv_sec && a.changed.tv_nsec == b.changed.tv_nsec
+    }
+
+    /// The file itself, then, for a folder skin, each file in it.
+    public static func of(_ url: URL) -> [FileStamp] {
+        guard let own = stamp(url) else { return [] }
+        // Hidden files, such as Finder's .DS_Store, are not part of the skin.
+        let inside = ((try? FileManager.default.contentsOfDirectory(atPath: url.path)) ?? []).filter { !$0.hasPrefix(".") }
+        return [own] + inside.sorted().compactMap { stamp(url.appending(path: $0)) }
+    }
+
+    private static func stamp(_ url: URL) -> FileStamp? {
+        var info = stat()
+        guard stat(url.path, &info) == 0 else { return nil }
+        return FileStamp(name: url.lastPathComponent, inode: info.st_ino, size: info.st_size, changed: info.st_ctimespec)
+    }
+}
