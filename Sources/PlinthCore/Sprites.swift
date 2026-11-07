@@ -32,6 +32,69 @@ extension Skin<SkinImage> {
     }
 }
 
+/// A skin to choose: one that ships with the app, or one in the skins folder.
+public struct SkinOption: Identifiable {
+    /// "" for the wooden fish, "builtin/<folder>" for the others that ship
+    /// with the app, or the file name in the skins folder. The wooden fish
+    /// keeps the "" it had as the default, so a choice of it still holds.
+    public let id: String
+    public let title: String
+    public let pack: SkinPack
+
+    public init(id: String, title: String, pack: SkinPack) {
+        self.id = id
+        self.title = title
+        self.pack = pack
+    }
+
+    /// The skin worn until another is chosen: the ink fish, in the same ink
+    /// and paper as the icon, the disk image and Settings > Why a Fish.
+    private static let defaultFolder = "ink-fish"
+
+    /// The ink fish first, then the rest in folder order. Their names come
+    /// from skin.json in English, and from Skins.strings, keyed by folder, in
+    /// other languages.
+    public static let builtIn: [SkinOption] = {
+        guard let dir = Bundle.main.url(forResource: "Skins", withExtension: nil) else { return [] }
+        let names = ((try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? [])
+            .sorted { ($0 == defaultFolder ? 0 : 1, $0) < ($1 == defaultFolder ? 0 : 1, $1) }
+        return names.compactMap { name in
+            guard let pack = SkinPack.load(dir.appending(path: name)) else { return nil }
+            return SkinOption(id: name == "wooden-fish" ? "" : "builtin/\(name)", title: title(name, pack.name ?? name), pack: pack)
+        }
+    }()
+
+    public static let inkFish = builtIn.first { $0.id == "builtin/\(defaultFolder)" }
+        ?? SkinOption(id: "builtin/\(defaultFolder)", title: title(defaultFolder, "Ink Fish"), pack: SkinPack(idle: SkinImage()))
+
+    private static func title(_ folder: String, _ english: String) -> String {
+        Bundle.main.localizedString(forKey: folder, value: english, table: "Skins")
+    }
+}
+
+extension CGImage {
+    /// The part of the image that shows, without the empty space around it:
+    /// a skin frame has a lot of it above the figure, for the mallet.
+    public func visiblePart() -> CGImage? {
+        let w = width, h = height
+        var pixels = [UInt8](repeating: 0, count: w * h * 4)
+        guard let ctx = CGContext(data: &pixels, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                                  space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        ctx.draw(self, in: CGRect(x: 0, y: 0, width: w, height: h))
+        // Rows run top to bottom in memory, as CGImage cropping expects.
+        var (minX, minY, maxX, maxY) = (w, h, -1, -1)
+        for y in 0..<h {
+            for x in 0..<w where pixels[(y * w + x) * 4 + 3] > 24 {
+                minX = min(minX, x); maxX = max(maxX, x)
+                minY = min(minY, y); maxY = max(maxY, y)
+            }
+        }
+        guard maxX >= minX else { return nil }
+        return cropping(to: CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1))
+    }
+}
+
 /// Shared sprites, and where the mallet's head and grip sit in its image.
 enum Sprite {
     static let mallet = load("mallet")
