@@ -1,3 +1,4 @@
+import PlinthCore
 import SwiftUI
 
 struct SettingsView: View {

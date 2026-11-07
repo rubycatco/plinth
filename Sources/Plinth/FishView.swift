@@ -1,3 +1,4 @@
+import PlinthCore
 import SwiftUI
 
 /// Moves the borderless panel while the fish is dragged.
@@ -39,7 +40,7 @@ struct FishView: View {
     var body: some View {
         let side = fish.size.side
         VStack(spacing: 0) {
-            SpriteFish(pack: fish.pack, side: side)
+            WornFish(pack: fish.pack, side: side)
                 .frame(width: side, height: side)
                 // The mallet swings as the press goes down, as a drum answers a
                 // stick, not when the click lets go. A press that turns into

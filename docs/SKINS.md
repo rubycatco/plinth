@@ -2,7 +2,7 @@
 
 English · [简体中文](SKINS.zh-Hans.md)
 
-This is the reference for Plinth skins: which files a skin may contain, how Plinth reads them, and how it draws and animates them. It describes the behaviour of `SkinPack.load` and `SpriteFish` in [`Sources/Plinth/Sprites.swift`](../Sources/Plinth/Sprites.swift). Where this document and the code disagree, the code is right and this document needs fixing.
+This is the reference for Plinth skins: which files a skin may contain, how Plinth reads them, and how it draws and animates them. It describes the behaviour of `Skin.load` in [`Sources/PlinthCore/Skin.swift`](../Sources/PlinthCore/Skin.swift) and `SpriteFish` in [`Sources/PlinthCore/Sprites.swift`](../Sources/PlinthCore/Sprites.swift). Where this document and the code disagree, the code is right and this document needs fixing.
 
 ## Where skins live
 
@@ -22,7 +22,7 @@ A skin's identity is its file or folder name. Plinth remembers the skin you wear
 
 A `.plinthskin` file is a folder skin in a zip archive, to share as one file. Double-click it, drop it on the fish, or pick it in **Add Skins…**: Plinth unpacks it into the skins folder and wears it.
 
-The archive holds either the skin folder itself, which names the skin, or the skin's files at its top level, in which case the skin is named after the archive. An archive with anything else in it, with no `idle.png`, or with a symbolic link is refused.
+The archive holds either the skin folder itself, which names the skin, or the skin's files at its top level, in which case the skin is named after the archive. An archive with anything else in it, with no `idle.png`, with a symbolic link, or that would unpack to more than 64 MB is refused.
 
 To make one, right-click a skin of your own in **Settings → Skins** and choose **Export as .plinthskin…**, or run:
 

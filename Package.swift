@@ -7,18 +7,28 @@ let appStore = Context.environment["PLINTH_APPSTORE"] == "1"
 
 let package = Package(
     name: "Plinth",
-    platforms: [.macOS(.v14)],
+    // iOS only for PlinthCore; the app itself is macOS.
+    platforms: [.macOS(.v14), .iOS(.v17)],
+    // PlinthCore is a product so that an app on another platform can use it.
+    products: [
+        .executable(name: "Plinth", targets: ["Plinth"]),
+        .library(name: "PlinthCore", targets: ["PlinthCore"])
+    ],
     // Declared in every build, though the App Store build doesn't link it,
     // so that build leaves Package.resolved and its Sparkle pin alone.
     dependencies: [
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.10.1")
     ],
     targets: [
+        // What the fish is without a Mac to sit on: the synthesized knock and
+        // the hall it rings in, the rhythms and the incense, its few words, and
+        // the skin it is drawn in. Nothing in it needs a Mac.
+        .target(name: "PlinthCore", path: "Sources/PlinthCore"),
         // Resources live in App/Resources and are copied into the .app by
         // scripts/build_app.sh, so the code loads them from Bundle.main.
         .executableTarget(
             name: "Plinth",
-            dependencies: appStore ? [] : [.product(name: "Sparkle", package: "Sparkle")],
+            dependencies: ["PlinthCore"] + (appStore ? [] : [.product(name: "Sparkle", package: "Sparkle")]),
             path: "Sources/Plinth",
             swiftSettings: appStore ? [.define("APPSTORE")] : [],
             // Sparkle.framework sits next to the binary after `swift build`,
