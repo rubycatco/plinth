@@ -7,9 +7,10 @@ let appStore = Context.environment["PLINTH_APPSTORE"] == "1"
 
 let package = Package(
     name: "Plinth",
-    // iOS only for PlinthCore; the app itself is macOS.
+    // iOS only for PlinthCore, which the iPhone app in iOS/ uses; this
+    // package's app is the Mac's.
     platforms: [.macOS(.v14), .iOS(.v17)],
-    // PlinthCore is a product so that an app on another platform can use it.
+    // PlinthCore is a product so that the iPhone app can use it.
     products: [
         .executable(name: "Plinth", targets: ["Plinth"]),
         .library(name: "PlinthCore", targets: ["PlinthCore"])

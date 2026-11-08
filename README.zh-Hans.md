@@ -135,6 +135,7 @@ open build/Plinth.app
 Sources/Plinth/     Mac App：SwiftUI + AppKit 源码
 Sources/PlinthCore/ 不依赖 Mac 的部分：KnockSynth.swift 负责合成敲击声，KnockSound.swift 负责播放，Sprites.swift 负责按皮肤画出木鱼和木槌
 App/                Info.plist、App 图标、磁盘映像背景和打包进 App 的资源（皮肤、木槌、敲击效果、界面文字）
+iOS/                iPhone App，刚开始搭：用 Xcode 27.1 或更新版本打开 iOS/Plinth.xcodeproj，运行 Plinth iOS 这个 scheme
 scripts/            构建、打包磁盘映像和生成更新源的脚本
 docs/               皮肤格式、发布流程（英文），以及 README 用的图
 .github/workflows/  发布流程
