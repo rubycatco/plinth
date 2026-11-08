@@ -12,6 +12,9 @@ public struct Quote: Identifiable, Equatable {
         self.source = source
         self.leavesSilence = leavesSilence
     }
+
+    /// How long the words stay, in seconds: long enough to read slowly.
+    public var readingTime: Double { min(14, max(7, Double(text.count) * 0.4)) }
 }
 
 /// Keep the words' layout while they fall silent, without replacing them
@@ -53,4 +56,26 @@ public enum Zen {
     public static let whyFish = Quote(
         text: "鱼昼夜常醒，刻木象形击之，所以警昏惰也。",
         source: "《敕修百丈清规》")
+
+    /// The line to say on a knock by hand now, if one is due, which is then
+    /// kept as said: the next, on the first such knock each day (from 4 a.m.).
+    /// After the last, none. `defaults` keeps how many have been said, and
+    /// the day of the last.
+    public static func nextSaying(in defaults: UserDefaults = .standard) -> Quote? {
+        let said = defaults.integer(forKey: "said")
+        guard said < sayings.count else { return nil }
+        let today = Self.today()
+        guard defaults.string(forKey: "lastSaidDay") != today else { return nil }
+        defaults.set(said + 1, forKey: "said")
+        defaults.set(today, forKey: "lastSaidDay")
+        return sayings[said]
+    }
+
+    /// A temple's day begins when the board is struck to wake the hall, before
+    /// dawn, not at midnight: a knock at one in the morning is still last night.
+    private static func today() -> String {
+        let dawn = Calendar.current.date(byAdding: .hour, value: -4, to: .now) ?? .now
+        let day = Calendar.current.dateComponents([.year, .month, .day], from: dawn)
+        return "\(day.year ?? 0)-\(day.month ?? 0)-\(day.day ?? 0)"
+    }
 }
