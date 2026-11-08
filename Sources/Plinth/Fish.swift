@@ -465,24 +465,9 @@ final class Fish {
     /// The fish has a few things to say and says each of them once: the next
     /// line, on the first knock by hand each day (from 4 a.m.). After the last, it only knocks.
     private func speak() {
-        let said = defaults.integer(forKey: "said")
         // An unseen fish has no words either; they wait until it is seen.
-        guard placement != .unseen, said < Zen.sayings.count else { return }
-        let today = Self.today()
-        guard defaults.string(forKey: "lastSaidDay") != today else { return }
-        defaults.set(said + 1, forKey: "said")
-        defaults.set(today, forKey: "lastSaidDay")
-        let saying = Zen.sayings[said]
-        // Long enough to read slowly.
-        show(saying, for: min(14, max(7, Double(saying.text.count) * 0.4)))
-    }
-
-    /// A temple's day begins when the board is struck to wake the hall, before
-    /// dawn, not at midnight: a knock at one in the morning is still last night.
-    private static func today() -> String {
-        let dawn = Calendar.current.date(byAdding: .hour, value: -4, to: .now) ?? .now
-        let day = Calendar.current.dateComponents([.year, .month, .day], from: dawn)
-        return "\(day.year ?? 0)-\(day.month ?? 0)-\(day.day ?? 0)"
+        guard placement != .unseen, let saying = Zen.nextSaying(in: defaults) else { return }
+        show(saying, for: saying.readingTime)
     }
 
     /// Read the skins folder. A skin whose files are as they were is kept, not
