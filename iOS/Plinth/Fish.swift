@@ -22,8 +22,9 @@ final class Fish {
     private(set) var impacts = 0
     /// How fully the last knock rang: 0 after a rushed knock, 1 after a long quiet.
     private(set) var bloom = 1.0
-    /// The fish's line for the day, while it is said. The iPhone writes it on
-    /// the page a half-open iPhone Duo spares, so the fish says it only there.
+    /// The fish's line for the day, once said. The iPhone writes it on the
+    /// page a half-open iPhone Duo spares, so the fish says it only there,
+    /// and there it stays the day.
     private(set) var saying: Quote?
     @ObservationIgnored private var hush: Task<Void, Never>?
     @ObservationIgnored private let sound = KnockSound(headphones: Headphones.inUse)
@@ -38,6 +39,8 @@ final class Fish {
         try? AVAudioSession.sharedInstance().setActive(true)
         skin = UserDefaults.standard.string(forKey: "skin") ?? SkinOption.inkFish.id
         wear()
+        // A line said earlier today is on the page still.
+        if let quote = Zen.saidToday(), !quote.leavesSilence { keep(quote, until: Zen.todayEnds) }
     }
 
     /// Put on the worn skin and its voice. A skin that no longer ships is the ink fish.
@@ -75,13 +78,21 @@ final class Fish {
 
     /// As on the Mac, the fish has a few things to say and says each once:
     /// the next line, on the first knock by hand each day (from 4 a.m.). After
-    /// the last, it only knocks. The words stay as long as the Mac's do.
+    /// the last, it only knocks.
     private func speak() {
         guard let quote = Zen.nextSaying() else { return }
+        // Written on paper, a line stays the day. The last asks what only
+        // silence answers, so it fades as the Mac's words do, once read, and
+        // leaves the page blank.
+        keep(quote, until: quote.leavesSilence ? .now.addingTimeInterval(quote.readingTime) : Zen.todayEnds)
+    }
+
+    /// Keep a line on the page until `end`, when it fades.
+    private func keep(_ quote: Quote, until end: Date) {
         saying = quote
         hush?.cancel()
         hush = Task {
-            try? await Task.sleep(for: .seconds(quote.readingTime))
+            try? await Task.sleep(for: .seconds(end.timeIntervalSinceNow))
             guard !Task.isCancelled else { return }
             saying = nil
         }

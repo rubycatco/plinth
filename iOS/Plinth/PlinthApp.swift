@@ -47,14 +47,15 @@ struct FishScreen: View {
                         .gesture(DragGesture(minimumDistance: 0).updating($pressed) { value, pressed, _ in
                             guard !pressed else { return }
                             pressed = true
-                            // With a page to write on, the fish has its say.
-                            fish.knock(at: value.startLocation.x / side, speaks: spare != nil)
+                            // With a page to write on, and no skins laid over it,
+                            // the fish has its say.
+                            fish.knock(at: value.startLocation.x / side, speaks: spare != nil && !choosing)
                         })
                         // VoiceOver reads it as a button that knocks, and can press it.
                         .accessibilityElement()
                         .accessibilityLabel("Knock")
                         .accessibilityAddTraits(.isButton)
-                        .accessibilityAction { fish.knock(at: fish.pack.strike.x, speaks: spare != nil) }
+                        .accessibilityAction { fish.knock(at: fish.pack.strike.x, speaks: spare != nil && !choosing) }
                         .position(x: page.midX, y: page.midY)
                         // As the fold comes and goes, the fish moves over rather than jumps.
                         .animation(.smooth(duration: 0.4), value: page.origin)
@@ -84,7 +85,7 @@ struct FishScreen: View {
                 if let fold { Self.crease(along: fold) }
             }
             // The spare page holds the skins while they are chosen from, and
-            // otherwise the fish's line for the day, while it is said.
+            // otherwise the fish's line for the day, once said.
             .overlay {
                 if let spare {
                     ZStack {
@@ -162,7 +163,9 @@ struct FishScreen: View {
 
 /// The fish's line for the day, written down the spare page as the Mac's
 /// scroll is: top to bottom and right to left, a column to each clause and no
-/// punctuation, then where it is from, smaller and paler, and set lower.
+/// punctuation, then where it is from, smaller and paler, and set lower. The
+/// scroll's Songti doesn't come with iOS, so the app carries a Song face of
+/// its own, Noto Serif SC, cut down to the characters the fish says.
 struct Writing: View {
     let quote: Quote
 
@@ -182,12 +185,13 @@ struct Writing: View {
         .accessibilityLabel(Text(verbatim: "\(quote.text) \(quote.source)"))
     }
 
-    /// Characters stacked top to bottom.
+    /// Characters stacked top to bottom, as far apart as the face's own tall
+    /// lines set them: closer down a column than across from the next.
     private static func column(_ text: String, size: CGFloat) -> some View {
-        VStack(spacing: size * 0.32) {
+        VStack(spacing: 0) {
             ForEach(Array(text.enumerated()), id: \.offset) { Text(String($0.element)) }
         }
-        .font(.system(size: size, weight: .light))
+        .font(.custom("NotoSerifSC-Regular", fixedSize: size))
     }
 }
 
