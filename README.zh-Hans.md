@@ -132,7 +132,8 @@ open build/Plinth.app
 菜单和设置跟随系统语言，系统是简体中文时显示中文，其他情况显示英文。界面文字在 [`App/Resources/zh-Hans.lproj`](App/Resources/zh-Hans.lproj)（`Localizable.strings` 是菜单和设置，`Skins.strings` 是内置皮肤名）；想加一种语言，复制成 `<语言代码>.lproj`，翻译里面的值，再把语言代码加进 [`App/Info.plist`](App/Info.plist) 的 `CFBundleLocalizations`。
 
 ```
-Sources/Plinth/     SwiftUI + AppKit 源码，KnockSynth.swift 负责合成敲击声
+Sources/Plinth/     Mac App：SwiftUI + AppKit 源码
+Sources/PlinthCore/ 不依赖 Mac 的部分：KnockSynth.swift 负责合成敲击声，KnockSound.swift 负责播放，Sprites.swift 负责按皮肤画出木鱼和木槌
 App/                Info.plist、App 图标、磁盘映像背景和打包进 App 的资源（皮肤、木槌、敲击效果、界面文字）
 scripts/            构建、打包磁盘映像和生成更新源的脚本
 docs/               皮肤格式、发布流程（英文），以及 README 用的图

@@ -2,7 +2,7 @@
 
 [English](SKINS.md) · 简体中文
 
-这份文档是 Plinth 皮肤的参考：一款皮肤可以放哪些文件，Plinth 怎么读取，又怎么绘制和播放动画。它描述的是 [`Sources/Plinth/Sprites.swift`](../Sources/Plinth/Sprites.swift) 里 `SkinPack.load` 和 `SpriteFish` 的行为。文档和代码对不上时，以代码为准，文档需要修正。
+这份文档是 Plinth 皮肤的参考：一款皮肤可以放哪些文件，Plinth 怎么读取，又怎么绘制和播放动画。它描述的是 [`Sources/PlinthCore/Skin.swift`](../Sources/PlinthCore/Skin.swift) 里 `Skin.load` 和 [`Sources/PlinthCore/Sprites.swift`](../Sources/PlinthCore/Sprites.swift) 里 `SpriteFish` 的行为。文档和代码对不上时，以代码为准，文档需要修正。
 
 ## 皮肤放在哪里
 
@@ -22,7 +22,7 @@ Plinth 从这里读取你的皮肤：
 
 `.plinthskin` 文件就是把一个文件夹皮肤压成 zip，方便当作一个文件分享。双击它、拖到木鱼上，或者在 **添加皮肤…** 里选中它，Plinth 都会把它解压到皮肤文件夹里并换上。
 
-压缩包里要么就是皮肤文件夹本身，皮肤以这个文件夹命名；要么皮肤的文件直接放在最上层，皮肤以压缩包的名字命名。里面有别的东西、没有 `idle.png`，或者含有符号链接的，会被拒绝。
+压缩包里要么就是皮肤文件夹本身，皮肤以这个文件夹命名；要么皮肤的文件直接放在最上层，皮肤以压缩包的名字命名。里面有别的东西、没有 `idle.png`、含有符号链接，或者解压后超过 64 MB 的，会被拒绝。
 
 要做一个，在 **设置 → 皮肤** 里右键点你自己的皮肤，选 **导出为 .plinthskin…**；或者运行：
 

@@ -3,14 +3,14 @@ import Foundation
 /// The knock, synthesized as the mallet falls. A few decaying modes, a short
 /// mallet burst, and one wooden hall they all ring in. Nothing is stored: a
 /// skin names a voice, and the voice is a handful of numbers.
-enum KnockSynth {
-    static let sampleRate: Float = 44100
-    static let voices = ["wood", "lacquer", "ink", "cartoon", "pixel", "jade", "bowl", "key", "bamboo", "stone", "piston", "crt", "bead", "plate", "porcelain", "bell", "stamp", "chime", "board", "ceramic", "temple"]
+public enum KnockSynth {
+    public static let sampleRate: Float = 44100
+    public static let voices = ["wood", "lacquer", "ink", "cartoon", "pixel", "jade", "bowl", "key", "bamboo", "stone", "piston", "crt", "bead", "plate", "porcelain", "bell", "stamp", "chime", "board", "ceramic", "temple"]
 
     /// The force every voice is tuned at, and that tools/knock_synth.py renders.
     static let referenceForce: Float = 0.6
 
-    static func resolve(_ name: String?) -> String {
+    public static func resolve(_ name: String?) -> String {
         guard let name, tones[name] != nil else { return "wood" }
         return name
     }
@@ -21,7 +21,7 @@ enum KnockSynth {
     /// soft one rounder; off the spot the hollow speaks less and the shell more.
     /// `warmth` is the hour and the season, as `warmth(at:)` gives it.
     /// `settling` is how much a run of hurried keys softens the hand (0...1).
-    static func knock(_ name: String, force: Float, place: Float, warmth: Float = 0, settling: Float = 0) -> [Float] {
+    public static func knock(_ name: String, force: Float, place: Float, warmth: Float = 0, settling: Float = 0) -> [Float] {
         let settling = min(max(settling, 0), 1)
         let force = force * (1 - 0.35 * settling)
         let tone = tones[resolve(name)]!
@@ -39,7 +39,7 @@ enum KnockSynth {
 
     /// The voice's strike at the reference force, to tune the hall against.
     /// It is heard at no hour: its warmth is 0, the voice as tuned.
-    static func reference(_ name: String) -> [Float] {
+    public static func reference(_ name: String) -> [Float] {
         let tone = tones[resolve(name)]!
         return strike(tone, base: tone.bases[0], seed: tone.seed)
     }
@@ -49,7 +49,7 @@ enum KnockSynth {
     /// dawn, clear and a little bright; 1 the close, warm air of a summer's
     /// late night, the wood rounder and the hall softer. 0 is the voice as
     /// tuned. It moves so slowly that no knock sounds unlike the one before.
-    static func warmth(at date: Date, calendar: Calendar = .current) -> Float {
+    public static func warmth(at date: Date, calendar: Calendar = .current) -> Float {
         let c = calendar.dateComponents([.hour, .minute, .second], from: date)
         let hour = Float(c.hour ?? 12) + Float(c.minute ?? 0) / 60 + Float(c.second ?? 0) / 3600
         // The day: clearest at the morning board, warming through the day and
@@ -375,9 +375,9 @@ enum KnockSynth {
     /// One wooden room, from a small meditation room to a large hall. Every
     /// voice is heard in it; the app mixes more of the tail in the longer the
     /// quiet before a knock.
-    enum Hall {
+    public enum Hall {
         /// The hall the knocks have always rung in, and tools/knock_synth.py renders.
-        static let defaultSpace: Float = 0.7
+        public static let defaultSpace: Float = 0.7
 
         /// How much of its highs the hall's wood soaks up on each pass, at a
         /// `KnockSynth.warmth`: a little less in cold dry air, a little more in
