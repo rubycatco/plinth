@@ -71,11 +71,29 @@ public enum Zen {
         return sayings[said]
     }
 
+    /// The line said today, if one has been.
+    public static func saidToday(in defaults: UserDefaults = .standard) -> Quote? {
+        let said = defaults.integer(forKey: "said")
+        guard said > 0, said <= sayings.count, defaults.string(forKey: "lastSaidDay") == today() else { return nil }
+        return sayings[said - 1]
+    }
+
+    /// When today ends, at the next 4 a.m., and the next line comes due.
+    public static var todayEnds: Date {
+        let calendar = Calendar.current
+        let midnight = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: hoursBack())) ?? .now
+        return calendar.date(byAdding: .hour, value: 4, to: midnight) ?? .now
+    }
+
     /// A temple's day begins when the board is struck to wake the hall, before
     /// dawn, not at midnight: a knock at one in the morning is still last night.
     private static func today() -> String {
-        let dawn = Calendar.current.date(byAdding: .hour, value: -4, to: .now) ?? .now
-        let day = Calendar.current.dateComponents([.year, .month, .day], from: dawn)
+        let day = Calendar.current.dateComponents([.year, .month, .day], from: hoursBack())
         return "\(day.year ?? 0)-\(day.month ?? 0)-\(day.day ?? 0)"
+    }
+
+    /// The clock four hours back, whose date is the temple's day.
+    private static func hoursBack() -> Date {
+        Calendar.current.date(byAdding: .hour, value: -4, to: .now) ?? .now
     }
 }
