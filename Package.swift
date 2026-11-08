@@ -33,8 +33,10 @@ let package = Package(
             path: "Sources/Plinth",
             swiftSettings: appStore ? [.define("APPSTORE")] : [],
             // Sparkle.framework sits next to the binary after `swift build`,
-            // and in Contents/Frameworks in the app.
-            linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@loader_path",
+            // and in Contents/Frameworks in the app. The binary's own folder
+            // is named as @executable_path: SwiftPM may add @loader_path, the
+            // same folder, itself, and ld warns when a path is given twice.
+            linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path",
                                            "-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]),
         .testTarget(name: "PlinthTests", dependencies: ["Plinth"])
     ]
