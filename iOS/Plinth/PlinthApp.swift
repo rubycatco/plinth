@@ -17,6 +17,7 @@ struct PlinthApp: App {
 /// no clock, so the status bar keeps out of the way too. A small palette in
 /// the corner lays the skins out along the foot of the paper, or, while the
 /// fold of a half-open iPhone Duo divides it, across the page the fish isn't on.
+/// That page is where the fish's line for the day is written, too.
 struct FishScreen: View {
     /// The rice paper of the Mac's Settings › Why a Fish. It stays paper in
     /// Dark Mode too; ink needs a light ground.
@@ -46,13 +47,14 @@ struct FishScreen: View {
                         .gesture(DragGesture(minimumDistance: 0).updating($pressed) { value, pressed, _ in
                             guard !pressed else { return }
                             pressed = true
-                            fish.knock(at: value.startLocation.x / side)
+                            // With a page to write on, the fish has its say.
+                            fish.knock(at: value.startLocation.x / side, speaks: spare != nil)
                         })
                         // VoiceOver reads it as a button that knocks, and can press it.
                         .accessibilityElement()
                         .accessibilityLabel("Knock")
                         .accessibilityAddTraits(.isButton)
-                        .accessibilityAction { fish.knock(at: fish.pack.strike.x) }
+                        .accessibilityAction { fish.knock(at: fish.pack.strike.x, speaks: spare != nil) }
                         .position(x: page.midX, y: page.midY)
                         // As the fold comes and goes, the fish moves over rather than jumps.
                         .animation(.smooth(duration: 0.4), value: page.origin)
@@ -81,12 +83,21 @@ struct FishScreen: View {
             .background {
                 if let fold { Self.crease(along: fold) }
             }
+            // The spare page holds the skins while they are chosen from, and
+            // otherwise the fish's line for the day, while it is said.
             .overlay {
-                if choosing, let spare {
-                    SkinPage()
-                        .frame(width: spare.width, height: spare.height)
-                        .position(x: spare.midX, y: spare.midY)
-                        .transition(.opacity)
+                if let spare {
+                    ZStack {
+                        if choosing {
+                            SkinPage()
+                        } else if let saying = fish.saying {
+                            Writing(quote: saying)
+                        }
+                    }
+                    .frame(width: spare.width, height: spare.height)
+                    .position(x: spare.midX, y: spare.midY)
+                    // The words soak into the paper, and fade from it.
+                    .animation(.easeInOut(duration: 1), value: fish.saying)
                 }
             }
             // Open the phone with the skins out, and they gather into the strip;
@@ -146,6 +157,37 @@ struct FishScreen: View {
         ], startPoint: upright ? .leading : .top, endPoint: upright ? .trailing : .bottom)
         .frame(width: fold.width, height: fold.height)
         .position(x: fold.midX, y: fold.midY)
+    }
+}
+
+/// The fish's line for the day, written down the spare page as the Mac's
+/// scroll is: top to bottom and right to left, a column to each clause and no
+/// punctuation, then where it is from, smaller and paler, and set lower.
+struct Writing: View {
+    let quote: Quote
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 18) {
+            // Book titles' brackets turn to stand in a column.
+            Self.column(quote.source.replacing("《", with: "︽").replacing("》", with: "︾"), size: 13)
+                .foregroundStyle(FishScreen.ink.opacity(0.5))
+                .padding(.top, 48)
+            ForEach(Array(quote.text.split { "，。、；：！？\n".contains($0) }.enumerated().reversed()), id: \.offset) {
+                Self.column(String($0.element), size: 24)
+                    .foregroundStyle(FishScreen.ink.opacity(0.88))
+            }
+        }
+        // VoiceOver reads the line as it is punctuated, and where it is from.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: "\(quote.text) \(quote.source)"))
+    }
+
+    /// Characters stacked top to bottom.
+    private static func column(_ text: String, size: CGFloat) -> some View {
+        VStack(spacing: size * 0.32) {
+            ForEach(Array(text.enumerated()), id: \.offset) { Text(String($0.element)) }
+        }
+        .font(.system(size: size, weight: .light))
     }
 }
 

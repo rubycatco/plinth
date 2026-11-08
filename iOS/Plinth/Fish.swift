@@ -22,6 +22,10 @@ final class Fish {
     private(set) var impacts = 0
     /// How fully the last knock rang: 0 after a rushed knock, 1 after a long quiet.
     private(set) var bloom = 1.0
+    /// The fish's line for the day, while it is said. The iPhone writes it on
+    /// the page a half-open iPhone Duo spares, so the fish says it only there.
+    private(set) var saying: Quote?
+    @ObservationIgnored private var hush: Task<Void, Never>?
     @ObservationIgnored private let sound = KnockSound(headphones: Headphones.inUse)
     @ObservationIgnored private let haptics = KnockHaptics()
     /// When the mallet last met the wood, on the system uptime clock.
@@ -46,7 +50,9 @@ final class Fish {
     /// edge, 1 at its right, or near the strike point when nothing says
     /// where. After a long quiet, the mallet rests on the wood before it
     /// lifts (压槌). A `preview`, to hear a skin just chosen, never rests.
-    func knock(at x: Double? = nil, preview: Bool = false) {
+    /// A knock that `speaks` says the fish's line for the day, if one is due,
+    /// as the mallet lands.
+    func knock(at x: Double? = nil, preview: Bool = false, speaks: Bool = false) {
         let rested = KnockSound.bloom(afterSilence: ProcessInfo.processInfo.systemUptime + Swing.impactDelay - lastImpact)
         swing = Swing(serial: swing.serial + 1, lingers: !preview && rested > 0.9)
         // Wake the audio, and make the knock, while the mallet is in the air.
@@ -63,6 +69,21 @@ final class Fish {
             impacts += 1
             sound.play(samples, volume: 0.8, bloom: Float(bloom))
             haptics.play(force: force, place: place, bloom: bloom)
+            if speaks { speak() }
+        }
+    }
+
+    /// As on the Mac, the fish has a few things to say and says each once:
+    /// the next line, on the first knock by hand each day (from 4 a.m.). After
+    /// the last, it only knocks. The words stay as long as the Mac's do.
+    private func speak() {
+        guard let quote = Zen.nextSaying() else { return }
+        saying = quote
+        hush?.cancel()
+        hush = Task {
+            try? await Task.sleep(for: .seconds(quote.readingTime))
+            guard !Task.isCancelled else { return }
+            saying = nil
         }
     }
 }
