@@ -22,7 +22,10 @@ public enum SkinArchive {
     /// `ditto -c -k --keepParent` and Finder's Compress make it).
     public static func unpack(_ archive: URL, into scratch: URL) throws -> URL {
         try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
-        guard let zip = try? Data(contentsOf: archive) else { throw Failure.unreadable }
+        // An archive is hardly larger than the files it holds, so one larger
+        // than a skin may be, with room for its headers, is refused unread.
+        guard let length = try? archive.resourceValues(forKeys: [.fileSizeKey]).fileSize, length <= largest + (1 << 20),
+              let zip = try? Data(contentsOf: archive) else { throw Failure.unreadable }
         try zip.withUnsafeBytes { try extract($0, into: scratch) }
         if hasIdle(scratch) { return scratch }
         let folders = ((try? FileManager.default.contentsOfDirectory(at: scratch, includingPropertiesForKeys: nil)) ?? [])
@@ -59,7 +62,7 @@ public enum SkinArchive {
             end -= 1
         }
         let count = try int(end + 10, 2)
-        var at = try int(end + 16, 4), total = 0
+        var at = try int(end + 16, 4), total = 0, read = 0
         for _ in 0 ..< count {
             guard try int(at, 4) == 0x0201_4B50 else { throw Failure.unreadable }
             // Made on Unix or macOS, the upper half of the attributes is the file's mode.
@@ -86,7 +89,11 @@ public enum SkinArchive {
                 continue
             }
             total += size
-            guard total <= largest, try int(header, 4) == 0x0403_4B50 else { throw Failure.unreadable }
+            // Each file's data has a place of its own in the archive. Files
+            // listed over the same data would inflate it again and again, so
+            // together they may read no more than the archive holds.
+            read += packed
+            guard total <= largest, read <= zip.count, try int(header, 4) == 0x0403_4B50 else { throw Failure.unreadable }
             // The file's own header, then its data.
             let data = try bytes(header + 30 + int(header + 26, 2) + int(header + 28, 2), packed)
             let file = method == 0 ? [UInt8](data) : inflate(data, to: size)
