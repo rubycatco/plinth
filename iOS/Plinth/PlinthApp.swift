@@ -32,7 +32,7 @@ struct FishScreen: View {
 
     var body: some View {
         GeometryReader { paper in
-            let spare = Self.pages(in: paper).spare
+            let (_, spare, fold) = Self.pages(in: paper)
             VStack(spacing: 0) {
                 GeometryReader { screen in
                     let page = Self.pages(in: screen).fish
@@ -75,6 +75,12 @@ struct FishScreen: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
+            // Folded half shut, the paper shows a faint crease along the fold,
+            // as rice paper does once it has been folded in half. The crease
+            // fades in and out with the fold, as the fish moves over.
+            .background {
+                if let fold { Self.crease(along: fold) }
+            }
             .overlay {
                 if choosing, let spare {
                     SkinPage()
@@ -98,10 +104,12 @@ struct FishScreen: View {
     /// a book, that is the right-hand page; set down like a laptop, the half
     /// that lies on the table, where a knock doesn't rock the phone. The part
     /// before the fold is spare: the left-hand page, or the half that stands up.
-    private static func pages(in screen: GeometryProxy) -> (fish: CGRect, spare: CGRect?) {
+    /// The fold between them comes too, whole: it runs from edge to edge of the
+    /// screen, past the paper's margins.
+    private static func pages(in screen: GeometryProxy) -> (fish: CGRect, spare: CGRect?, fold: CGRect?) {
         let paper = CGRect(origin: .zero, size: screen.size)
         guard #available(iOS 27.1, *), let fold = screen.reservedRegions(kind: .division).first?.frame else {
-            return (paper, nil)
+            return (paper, nil, nil)
         }
         let (past, before) = fold.height > fold.width
             ? (CGRect(x: fold.maxX, y: 0, width: paper.maxX - fold.maxX, height: paper.height),
@@ -113,9 +121,31 @@ struct FishScreen: View {
         // right-hand one none before it. Then the paper is one page, less that
         // edge. Room is told by size, as CGRect's width and height are never negative.
         let room = { (page: CGRect) in page.size.width > 0 && page.size.height > 0 }
-        guard room(before) else { return (past, nil) }
-        guard room(past) else { return (before, nil) }
-        return (past, before)
+        guard room(before) else { return (past, nil, nil) }
+        guard room(past) else { return (before, nil, nil) }
+        return (past, before, fold)
+    }
+
+    /// A crease down the middle of the fold: a fine line where the fibres gave,
+    /// a hair of light past it, and a little shade from the halves either side.
+    private static func crease(along fold: CGRect) -> some View {
+        let upright = fold.height > fold.width
+        // Points from the middle of the fold, as a share of its breadth.
+        let at = { (points: CGFloat) in 0.5 + points / (upright ? fold.width : fold.height) }
+        return LinearGradient(stops: [
+            .init(color: ink.opacity(0), location: 0),
+            .init(color: ink.opacity(0.01), location: 0.25),
+            .init(color: ink.opacity(0.03), location: at(-1)),
+            .init(color: ink.opacity(0.07), location: at(-1)),
+            .init(color: ink.opacity(0.07), location: at(0)),
+            .init(color: .white.opacity(0.5), location: at(0)),
+            .init(color: .white.opacity(0.5), location: at(1)),
+            .init(color: ink.opacity(0.03), location: at(1)),
+            .init(color: ink.opacity(0.01), location: 0.75),
+            .init(color: ink.opacity(0), location: 1),
+        ], startPoint: upright ? .leading : .top, endPoint: upright ? .trailing : .bottom)
+        .frame(width: fold.width, height: fold.height)
+        .position(x: fold.midX, y: fold.midY)
     }
 }
 
