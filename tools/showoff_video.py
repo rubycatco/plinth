@@ -1,7 +1,5 @@
-"""Render Plinth's show-off video: every skin knocked in turn, then all
-twenty-one played as a drum kit. Its cast is the skins that shipped with
-Plinth when it was made; six have since moved to the gallery, and are drawn
-from App/Resources/Retired.
+"""Render Plinth's show-off video: every built-in skin knocked in turn, then all
+fifteen played as a drum kit.
 
 Frames are drawn with PIL from the skins' own sprites, with the mallet swing,
 give and burst timed like Sprites.swift. The soundtrack is the skins' real
@@ -33,12 +31,12 @@ CX = W / 2
 LAY = dict(glow=(1000, 520, 640), floor=1100, floor_r=520, side=720, near=520, far=300,
          quote=820, src=960, en=1060, merit=(540, 380), nomerit=1350, nomerit_en=1430,
          name=1300, zh=1362, cap=1420, dots=1560, gx=[CX + (c - 1) * 340 for c in range(3)],
-         gy=[290, 545, 800, 1055, 1310, 1565, 1820], gside=185, cols=3, glabel=19,
+         gy=[395, 725, 1055, 1385, 1715], gside=250, cols=3, glabel=22,
          end_floor=900, end_side=520, title=1040, tag=1160, tag2=1250, url=1380) if VERT else \
     dict(glow=(560, 620, 420), floor=745, floor_r=700, side=600, near=700, far=420,
          quote=470, src=610, en=680, merit=(660, 420), nomerit=860, nomerit_en=940,
-         name=850, zh=908, cap=962, dots=1030, gx=[CX + (c - 3) * 262 for c in range(7)],
-         gy=[330, 640, 950], gside=235, cols=7, glabel=19,
+         name=850, zh=908, cap=962, dots=1030, gx=[CX + (c - 2) * 340 for c in range(5)],
+         gy=[330, 640, 950], gside=260, cols=5, glabel=21,
          end_floor=470, end_side=380, title=585, tag=690, tag2=745, url=860)
 
 # name, folder, chinese, voice, glow colour, caption (from KnockSynth's comments)
@@ -50,19 +48,13 @@ SKINS = [
     ("Pixel Fish", "pixel-fish", "像素鱼", "pixel", (60, 220, 255), "Wood drawn in pixels: stiff partials, a grainy attack."),
     ("Red Lacquer", "red-lacquer", "朱漆", "lacquer", (255, 175, 60), "A hard lacquered shell, higher, with a sharper click."),
     ("Singing Bowl", "singing-bowl", "铜磬", "bowl", (60, 210, 230), "A struck bronze bowl. The hum under a slightly sharp rim."),
-    ("Space Key", "space-key", "空格键", "key", (128, 226, 242), "A low plastic thud and a short bright click. Knock as you type."),
     ("Bamboo Block", "bamboo-block", "竹节", "bamboo", (164, 218, 167), "A hollow bamboo tube, more air than wood."),
     ("Moss Stone", "moss-stone", "苔石", "stone", (186, 203, 139), "Mossy stone: dull, gritty, the ring soaked up."),
-    ("Piston", "piston", "活塞", "piston", (248, 178, 87), "Steel on steel. A short clack, not a bowl's ring."),
-    ("CRT Terminal", "crt-terminal", "CRT 终端", "crt", (101, 239, 149), "A plastic case, and a faint tick as the screen flashes."),
-    ("Abacus", "abacus", "算盘", "bead", (240, 198, 112), "Rosewood beads knocked together. It keeps no count."),
     ("Cloud Gong", "cloud-gong", "云板", "plate", (110, 225, 205), "A flat bronze plate under a leather mallet."),
     ("Porcelain Fish", "porcelain-fish", "青花瓷鱼", "porcelain", (80, 130, 255), "Thin glazed porcelain: high, bright and clean."),
     ("Bianzhong", "bianzhong", "编钟", "bell", (244, 210, 130), "One bronze bell, two notes a minor third apart."),
-    ("Seal", "seal", "印章", "stamp", (235, 85, 65), "A stone seal pressed onto paper. It leaves 空."),
     ("Stone Chime", "stone-chime", "石磬", "chime", (190, 235, 215), "A thin slab of hanging stone, rung with felt."),
     ("Fish Board", "fish-board", "鱼板", "board", (255, 80, 190), "The long wooden fish that hangs outside the hall."),
-    ("Mug", "mug", "马克杯", "ceramic", (255, 160, 70), "A spoon on the rim of a full mug."),
     ("Temple Fish", "temple-fish", "古木鱼", "temple", (236, 183, 88), "A big old temple fish under a cloth-wrapped mallet."),
 ]
 N = len(SKINS)
@@ -77,10 +69,8 @@ def load(path):
 
 HIT = -15.0                            # the mallet's angle as it lands
 PACKS = []
-# Whether each skin still ships with the app, or has moved to the gallery.
-SHIPS = [(RES / "Skins" / folder).is_dir() for _, folder, *_ in SKINS]
-for (name, folder, zh, voice, col, cap), ships in zip(SKINS, SHIPS):
-    d = f"{RES}/{'Skins' if ships else 'Retired'}/{folder}"
+for name, folder, zh, voice, col, cap in SKINS:
+    d = f"{RES}/Skins/{folder}"
     meta = json.load(open(f"{d}/skin.json"))
     PACKS.append(dict(idle=load(f"{d}/idle.png"), hit=load(f"{d}/hit.png"),
                       mallet=load(f"{d}/mallet.png") or load(f"{RES}/mallet.png"),
@@ -99,9 +89,9 @@ def font(kind, size):
 # ---------------------------------------------------------------- timeline
 SLOT, PARADE = 1.8, 9.0
 OFFSETS = [[.3, 1.05], [.3, .9], [.3, .6, .9], [.3, .9, 1.2], [.3, .45, .6, .9], [.3, .6, .9], [.3],
-           [.3, .45, .6, .75, .9], [.3, .9], [.3, .9], [.3, .6, .75, .9], [.3, .9],
-           [.3, .45, .6, .9], [.3], [.3, .9], [.3, 1.05], [.3, .9], [.3, 1.0], [.3, .6, .9], [.3, .45, .9], [.3, 1.0]]
-RING = (6, 13, 15)                     # the bronzes, given their full hall
+           [.3, .9], [.3, .9], [.3], [.3, .9], [.3, 1.05], [.3, 1.0], [.3, .6, .9], [.3, 1.0]]
+assert len(OFFSETS) == N
+RING = (6, 9, 11)                      # the bronzes, given their full hall
 GRID0 = PARADE + N * SLOT + 1.0
 STEP = 60 / 110 / 4
 ALL_HIT = GRID0 + 4 * 16 * STEP
@@ -113,8 +103,11 @@ impacts = [(5.0, 0, 1.0, "car")]
 for k in range(N):
     for o in OFFSETS[k]:
         impacts.append((PARADE + k * SLOT + o, k, 1.0 if k in RING else 0.3, "car"))
-groove = {8: [0, 3, 8, 10], 7: [4, 12], 9: [4], 10: [12], 5: [2, 6, 10, 14], 4: [7, 15], 11: [9],
-          1: [6, 11], 0: [5], 2: [13], 16: [0, 8], 12: [1, 9], 19: [3, 11], 18: [14], 14: [11], 17: [15], 20: [10]}
+# One bar of sixteenths, by skin. The bamboo block and the temple fish keep
+# the beat, the moss stone and the wooden fish answer on the backbeat, the
+# red lacquer ticks the offbeats, and the rest fill in around them.
+groove = {7: [0, 3, 8, 10], 14: [0, 8, 10], 8: [4, 12], 1: [4, 6, 11, 12], 5: [2, 6, 10, 14], 4: [7, 15],
+          0: [5], 2: [1, 13], 10: [9, 11], 13: [14], 12: [15]}
 for k in range(N):
     impacts.append((GRID0 + k * STEP, k, .25, "grid"))
 for bar in (1, 2, 3):
@@ -127,12 +120,12 @@ for bar in (1, 2, 3):
         impacts.append((GRID0 + 16 * STEP, 6, .6, "grid"))
     if bar == 2:
         impacts.append((GRID0 + (32 + 1) * STEP, 3, .2, "grid"))
-        impacts.append((GRID0 + 32 * STEP, 15, .5, "grid"))
+        impacts.append((GRID0 + 32 * STEP, 11, .5, "grid"))
     if bar == 3:
-        impacts.append((GRID0 + 48 * STEP, 13, .5, "grid"))
+        impacts.append((GRID0 + 48 * STEP, 9, .5, "grid"))
 for i, k in enumerate([1, 2, 3, 5]):          # fill
     impacts.append((GRID0 + (48 + 12 + i) * STEP, k, .2, "grid"))
-impacts.append((GRID0 + (48 + 12) * STEP, 8, .2, "grid"))
+impacts.append((GRID0 + (48 + 12) * STEP, 7, .2, "grid"))
 for k in range(N):
     impacts.append((ALL_HIT, k, 1.0 if k in RING else .5, "grid"))
 impacts.append((END0 + 2.4, 0, 1.0, "end"))

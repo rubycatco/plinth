@@ -1,9 +1,9 @@
-"""Render Plinth's promo: a 36-second trailer cut to a 140 BPM beat.
+"""Render Plinth's promo: a 33-second trailer cut to a 140 BPM beat.
 
 1. More knocking, more merit: the fish knocks faster, copies of it fill the
    screen and 功德 +1 piles up.
 2. Everything stops. 并无功德.
-3. All twenty-one skins, quickening: two beats each, then one, then half.
+3. All fifteen built-in skins, quickening: two beats each, then one, then half.
 4. What it does, one bar each: knock as you type, knock when a build is done,
    a stick of incense, auto-knock.
 5. The drum kit: every skin in one groove, ending on one knock from all.
@@ -30,12 +30,15 @@ CY = H / 2
 B = 60 / 140                                   # one beat, in seconds
 def T(b): return b * B
 
-FLOOD, PUNCH, PARADE, FEAT, DROP, END, TOTAL = 8, 16, 20, 42, 58, 74, 84
+FLOOD, PUNCH, PARADE, FEAT, DROP, END, TOTAL = 8, 16, 20, 36, 52, 68, 78
 DUR = T(TOTAL)
 
 @lru_cache(None)
 def mono(size, bold=False):
-    return ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono%s.ttf" % ("-Bold" if bold else ""), size)
+    # DejaVu Sans Mono, from the folder PLINTH_FONTS names if it is there.
+    name = "DejaVuSansMono%s.ttf" % ("-Bold" if bold else "")
+    own = os.path.join(os.environ.get("PLINTH_FONTS", ""), name)
+    return ImageFont.truetype(own if os.path.exists(own) else "/usr/share/fonts/truetype/dejavu/" + name, size)
 
 # ---------------------------------------------------------------- timeline
 rnd = random.Random(11)
@@ -84,13 +87,13 @@ popups.sort()
 # 2. punchline
 SLAM = PUNCH + 1
 knocks.append((T(SLAM), 6, 1.0, 1.6, 0))
-knocks.append((T(SLAM), 15, 1.0, 1.1, 0))
+knocks.append((T(SLAM), 11, 1.0, 1.1, 0))
 seen.append((T(SLAM), "slam", 6))
 
 # 3. the skins, quickening
 SLOTS, b = [], PARADE
 for k in range(N):
-    d = 2 if k < 5 else 1 if k < 13 else .5
+    d = 2 if k < 4 else 1 if k < 9 else .5
     SLOTS.append((k, b, d))
     knock(b, k, "parade", .6 if k in sv.RING else .3, 1.0)
     if d == 2: knock(b + 1, k, "parade", .3, .8)
@@ -101,8 +104,9 @@ for i in range(PARADE, FEAT):
 
 # 4. features, one bar each
 TYPED = "写代码，也是修行"
+TYPIST = 4                                 # the pixel fish knocks as you type
 for i in range(len(TYPED)):
-    knock(FEAT + .25 + i * .45, 7, "type", .2, .8)
+    knock(FEAT + .25 + i * .45, TYPIST, "type", .2, .8)
 CMD = "$ make test; open -g plinth://knock"
 knock(FEAT + 7, 0, "term", .8, 1.1)
 INC = FEAT + 8
@@ -263,9 +267,9 @@ def scene_parade(t):
     top = 70 if not VERT else 230
     text(canvas, f"{k + 1:02d} / {N}", mono(34, True), W - 140 if not VERT else CX, top if not VERT else top + 70, col)
     if not VERT:
-        text(canvas, "21 种皮肤，21 种声音", font("sansb", 34), 150, top, (230, 226, 218), anchor="lm")
+        text(canvas, f"{N} 种皮肤，{N} 种声音", font("sansb", 34), 150, top, (230, 226, 218), anchor="lm")
     else:
-        text(canvas, "21 种皮肤，21 种声音", font("sansb", 40), CX, top, (230, 226, 218))
+        text(canvas, f"{N} 种皮肤，{N} 种声音", font("sansb", 40), CX, top, (230, 226, 218))
     z = 1 + .07 * math.exp(-u * 14)
     return camera(canvas, z)
 
@@ -279,14 +283,14 @@ def scene_feat(t):
     b = t / B
     ty, box, fx, ff, fs = feat_layout()
     if b < FEAT + 4:            # knock as you type
-        canvas = bg(SKINS[7][4], .05, .3, ff - fs * .4)
+        canvas = bg(SKINS[TYPIST][4], .05, .3, ff - fs * .4)
         title(canvas, t, T(FEAT), "打字也会敲", "Knock as you type. Plinth never learns which key.", ty)
         panel(canvas, box)
-        times = sv.HITS[("type", 7)]
+        times = sv.HITS[("type", TYPIST)]
         n = sum(1 for h in times if h <= t)
         line = TYPED[:n] + ("▍" if int(t * 4) % 2 or n < len(TYPED) else " ")
         text(canvas, line, font("serif", 64), box[0] + 60, (box[1] + box[3]) / 2, (235, 232, 224), anchor="lm")
-        draw_skin(canvas, 7, fx, ff, fs, t, "type", 1.0)
+        draw_skin(canvas, TYPIST, fx, ff, fs, t, "type", 1.0)
     elif b < FEAT + 8:          # knock when the build is done
         canvas = bg(SKINS[0][4], .04, .3, ff - fs * .4)
         title(canvas, t, T(FEAT + 4), "活干完了，敲一下", "open -g plinth://knock  when a build, a test run or an agent is done.", ty)
