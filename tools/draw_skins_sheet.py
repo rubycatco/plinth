@@ -1,5 +1,4 @@
-"""Draw docs/skins.png, the README's picture of every built-in skin: those of
-the show-off video's cast that still ship with the app.
+"""Draw docs/skins.png, the README's picture of every built-in skin.
 
 Bodhidharma's answer from the show-off video, 并无功德, sits above the skins, each resting on
 its pedestal with its mallet raised and its name below. The skins are drawn
@@ -15,8 +14,7 @@ from PIL import Image, ImageDraw
 import showoff_video as v
 
 W, COLS, CELL, TOP, BOTTOM = 1800, 5, 360, 300, 40
-BUILT_IN = [k for k in range(v.N) if v.SHIPS[k]]
-ROWS = -(-len(BUILT_IN) // COLS)
+ROWS = -(-v.N // COLS)
 H = TOP + ROWS * CELL + BOTTOM
 SIDE = 250
 
@@ -59,9 +57,9 @@ def sheet():
     d = ImageDraw.Draw(img)
     centered(d, (W / 2, 125), "并无功德", v.font("serifb", 84), (240, 234, 222))
     centered(d, (W / 2, 218), "“No merit at all.”  — Bodhidharma, to Emperor Wu", v.font("serif", 26), (150, 146, 140))
-    for i, k in enumerate(BUILT_IN):
-        r, c = divmod(i, COLS)
-        row = min(COLS, len(BUILT_IN) - r * COLS)  # a short last row is centred
+    for k in range(v.N):
+        r, c = divmod(k, COLS)
+        row = min(COLS, v.N - r * COLS)  # a short last row is centred
         left = (W - row * CELL) // 2 + c * CELL
         img.alpha_composite(cell(k), (left, TOP + r * CELL))
     mask = Image.new("L", (W, H))
