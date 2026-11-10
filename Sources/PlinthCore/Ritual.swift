@@ -57,9 +57,9 @@ public enum IncenseLength: Int, CaseIterable, Identifiable {
     public var id: Self { self }
     public var title: String {
         switch self {
-        case .half: String(localized: "Half a stick · 25 minutes")
-        case .one: String(localized: "One stick · 45 minutes")
-        case .long: String(localized: "Long incense · 60 minutes")
+        case .half: String(localized: "Half a stick")
+        case .one: String(localized: "One stick")
+        case .long: String(localized: "Long incense")
         }
     }
 }

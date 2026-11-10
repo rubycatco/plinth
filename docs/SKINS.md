@@ -12,7 +12,7 @@ Plinth reads your skins from:
 ~/Library/Application Support/Plinth/Skins/
 ```
 
-Plinth creates the folder on first launch. **Skin → Open Skins Folder** opens it, and **Skin → Add Skins…** copies images, folders or `.plinthskin` files into it. Dropping one on the fish, or opening a `.plinthskin` file, does the same. Copying replaces any skin of the same name that is already there.
+Plinth creates the folder on first launch. **Settings → Skins → Open Skins Folder** opens it, and **Add Skins…** beside it copies images, folders or `.plinthskin` files into it. Dropping one on the fish, or opening a `.plinthskin` file, does the same. Copying replaces any skin of the same name that is already there.
 
 Each entry in the folder is one skin, either a single image or a folder. Plinth lists them after the twenty-one built-in skins, sorted by file name. Entries it can't read, such as a folder without `idle.png` or a stray `.DS_Store`, are skipped without a message.
 
@@ -34,7 +34,7 @@ Finder's **Compress** works too; rename the `.zip` to `.plinthskin`.
 
 ## Single-image skins
 
-Any image file macOS can open (PNG, JPEG, HEIC, TIFF, and so on) is a skin on its own. It has an idle frame only: no blink, no hit, the shared mallet and burst, the default strike point, and the wooden knock. Its name in the menus is the file name without the extension.
+Any image file macOS can open (PNG, JPEG, HEIC, TIFF, and so on) is a skin on its own. It has an idle frame only: no blink, no hit, the shared mallet and burst, the default strike point, and the wooden knock. Its name in Settings is the file name without the extension.
 
 ## Folder skins
 
@@ -76,7 +76,7 @@ Folder skins read PNG files only, by these exact lowercase names. A folder witho
 
 | Key | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `name` | string | file name | The skin's name in the menus and in Settings. |
+| `name` | string | file name | The skin's name in Settings. |
 | `strike` | array of two numbers | `[0.6, 0.3]` | Where the centre of the mallet's head lands, as fractions of the frame's width and height, measured from the top-left corner. Keep both within 0 to 1. |
 | `voice` | string | `"wood"` | Which knock the skin makes. See [Voices](#voices). |
 | `glow` | string | none | The colour of the pedestal's neon, as `#RRGGBB`, for a skin whose base lights up. The incense censer beside the fish catches it on its near side. Leave it out when the base has no light. |
