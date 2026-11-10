@@ -23,6 +23,37 @@ extension NSImage {
     }
 }
 
+extension SkinPack {
+    /// The figure with its mallet lying on it, as `SpriteFish` draws a mallet
+    /// a call left on the wood, small enough for the menu bar. The two share
+    /// the icon's square, so the figure is a little smaller than it is alone.
+    func menuBarIcon(malletDown: Bool, side: CGFloat = 18) -> NSImage {
+        guard malletDown, let figure = idle.cgImage(forProposedRect: nil, context: nil, hints: nil),
+              let stick = (mallet ?? Sprite.mallet).cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            return idle.menuBarIcon(side: side)
+        }
+        // One frame, and room past its right edge for the mallet's grip.
+        let frame = CGFloat(figure.width), size = frame * Sprite.malletSize
+        guard let ctx = CGContext(data: nil, width: Int(frame * 1.25), height: Int(frame), bitsPerComponent: 8, bytesPerRow: 0,
+                                  space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+            return idle.menuBarIcon(side: side)
+        }
+        ctx.interpolationQuality = .high
+        ctx.draw(figure, in: CGRect(x: 0, y: 0, width: frame, height: frame))
+        // The grip, from the frame's lower left: up and to the right of the
+        // strike point, with the head on it.
+        let reach = (Sprite.malletGrip.x - Sprite.malletHead.x) * size
+        let a = Sprite.strikeDegrees * .pi / 180
+        let grip = CGPoint(x: strike.x * frame + reach * cos(a), y: (1 - strike.y) * frame + reach * sin(a))
+        ctx.translateBy(x: grip.x, y: grip.y)
+        ctx.rotate(by: a)
+        ctx.draw(stick, in: CGRect(x: -Sprite.malletGrip.x * size, y: -(1 - Sprite.malletGrip.y) * size, width: size, height: size))
+        guard let both = ctx.makeImage() else { return idle.menuBarIcon(side: side) }
+        return NSImage(cgImage: both, size: .zero).menuBarIcon(side: side)
+    }
+}
+
 extension NSImage {
     private static var thumbnailsKey: UInt8 = 0
 

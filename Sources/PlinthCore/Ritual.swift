@@ -57,16 +57,18 @@ public enum IncenseLength: Int, CaseIterable, Identifiable {
     public var id: Self { self }
     public var title: String {
         switch self {
-        case .half: String(localized: "Half a stick · 25 minutes")
-        case .one: String(localized: "One stick · 45 minutes")
-        case .long: String(localized: "Long incense · 60 minutes")
+        case .half: String(localized: "Half a stick")
+        case .one: String(localized: "One stick")
+        case .long: String(localized: "Long incense")
         }
     }
 }
 
 /// One swing of the mallet. `quick` is the short swing for a typed key;
 /// `calledOff` takes a swing still in the air back up without landing;
-/// `lingers` rests on the wood before lifting slowly (压槌).
+/// `lingers` rests on the wood before lifting slowly (压槌). One that `holds`
+/// lands and stays on the wood, as after a call no one answered, and the
+/// swing after it `rises` from there.
 public struct Swing: Equatable {
     /// Time from the start of the swing until the mallet meets the wood, and
     /// how much of it the small lift before the swing takes.
@@ -79,12 +81,17 @@ public struct Swing: Equatable {
     public var quick = false
     public var calledOff = false
     public var lingers = false
+    public var holds = false
+    public var rises = false
 
-    public init(serial: Int = 0, quick: Bool = false, calledOff: Bool = false, lingers: Bool = false) {
+    public init(serial: Int = 0, quick: Bool = false, calledOff: Bool = false, lingers: Bool = false,
+                holds: Bool = false, rises: Bool = false) {
         self.serial = serial
         self.quick = quick
         self.calledOff = calledOff
         self.lingers = lingers
+        self.holds = holds
+        self.rises = rises
     }
 
     /// How hard the mallet lands when nothing tells how firmly the hand

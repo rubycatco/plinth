@@ -15,14 +15,17 @@ final class SkinArchiveTests: XCTestCase {
         try? FileManager.default.removeItem(at: scratch)
     }
 
-    /// Every built-in skin comes back byte for byte from the archive that
-    /// Export as .plinthskin writes.
+    /// Every built-in skin, and every one that has moved to the gallery,
+    /// comes back byte for byte from the archive that Export as .plinthskin writes.
     func testUnpacksWhatExportWrites() throws {
-        let skins = URL(filePath: #filePath).deletingLastPathComponent().appending(path: "../../App/Resources/Skins").standardized
-        let names = try FileManager.default.contentsOfDirectory(atPath: skins.path).filter { !$0.hasPrefix(".") }
-        XCTAssertEqual(names.count, 21)
-        for name in names {
-            let skin = skins.appending(path: name)
+        let resources = URL(filePath: #filePath).deletingLastPathComponent().appending(path: "../../App/Resources").standardized
+        let skins = try ["Skins", "Retired"].flatMap { folder in
+            try FileManager.default.contentsOfDirectory(atPath: resources.appending(path: folder).path)
+                .filter { !$0.hasPrefix(".") }.map { resources.appending(path: "\(folder)/\($0)") }
+        }
+        XCTAssertEqual(skins.count, 15 + 6)
+        for skin in skins {
+            let name = skin.lastPathComponent
             let archive = scratch.appending(path: "\(name).plinthskin")
             XCTAssertTrue(SkinArchive.pack(skin, to: archive))
             let folder = try SkinArchive.unpack(archive, into: scratch.appending(path: "unpacked-\(name)"))

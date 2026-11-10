@@ -62,23 +62,19 @@ private struct KnockingSettings: View {
                 Toggle("Knock on its own", isOn: $fish.autoKnock.animation(.snappy))
                 // Only what applies: the pace and rhythm appear once it knocks.
                 if fish.autoKnock {
-                    LabeledContent("Every") {
-                        HStack {
-                            // Even steps in proportion, not in seconds: from 0.4 s to 0.8 s
-                            // is as far as from 4 s to 8 s, a slow breath. Tenths of a second.
-                            Slider(value: Binding(get: { log(fish.interval) }, set: {
-                                let seconds = (exp($0) * 10).rounded() / 10
-                                if seconds != fish.interval { fish.interval = seconds }
-                            }), in: log(0.4)...log(8)) {
-                                EmptyView()
-                            } minimumValueLabel: {
-                                Image(systemName: "hare").foregroundStyle(.secondary)
-                            } maximumValueLabel: {
-                                Image(systemName: "tortoise").foregroundStyle(.secondary)
-                            }
-                            Text("\(fish.interval, specifier: "%.1f") s")
-                                .monospacedDigit()
-                                .frame(width: 44, alignment: .trailing)
+                    LabeledContent("Pace") {
+                        // Even steps in proportion, not in seconds: from 0.4 s to 0.8 s
+                        // is as far as from 4 s to 8 s, a slow breath. Tenths of a second.
+                        // No seconds are shown: the fish is knocking, and the ear sets the pace.
+                        Slider(value: Binding(get: { log(fish.interval) }, set: {
+                            let seconds = (exp($0) * 10).rounded() / 10
+                            if seconds != fish.interval { fish.interval = seconds }
+                        }), in: log(0.4)...log(8)) {
+                            EmptyView()
+                        } minimumValueLabel: {
+                            Image(systemName: "hare").foregroundStyle(.secondary)
+                        } maximumValueLabel: {
+                            Image(systemName: "tortoise").foregroundStyle(.secondary)
                         }
                     }
                     Picker("Rhythm", selection: $fish.rhythm) {
@@ -103,18 +99,9 @@ private struct KnockingSettings: View {
             } header: {
                 Text("While You Work")
             } footer: {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Each key you press, in any app, knocks once. Plinth never learns which key, and needs no permission.")
-                        .settingsFootnote()
-                    Text("After half an hour of typing with no three-minute rest, the fish falls quiet for three seconds, then knocks once with a held mallet. Typed knocks and auto-knock stay quiet for three breaths, about 15 seconds. Nothing is counted or kept.")
-                        .settingsFootnote()
-                    if Microphone.canTell {
-                        Text("While another app listens to a microphone, as in a call, only a knock by hand sounds. Plinth never listens itself.")
-                            .settingsFootnote()
-                    }
-                    Text("A key, a foot pedal or a Stream Deck button can be the mallet: press it in any app and the fish is knocked by hand. An F-key can stand alone; any other key needs two modifiers, one of them ⌘ or ⌃, so ⌘C, ⌃C and the like keep working.")
-                        .settingsFootnote()
-                }
+                // What the fish does is in its README. Here, only what it never does.
+                Text("Plinth never learns which key you press, never listens to a microphone itself, and needs no permission.")
+                    .settingsFootnote()
             }
             Section("The Fish") {
                 Picker("Size", selection: $fish.size) {
@@ -153,6 +140,8 @@ private struct MalletKeyField: View {
                     Text("Record Key")
                 }
             }
+            // The rule a refused key broke, for whoever wonders at the beep.
+            .help("An F-key can stand alone. Any other key needs two modifiers, one of them ⌘ or ⌃.")
             if fish.malletKey != nil && monitor == nil {
                 Button {
                     _ = fish.useMalletKey(nil)
@@ -318,8 +307,8 @@ private enum VolumeEnd {
 /// that explains it written top to bottom, right to left, with its source
 /// and a seal. It stays paper in Dark Mode too; ink needs a light ground.
 private struct AboutSettings: View {
-    static let paper = Color(red: 0.953, green: 0.933, blue: 0.890)
-    static let ink = Color(red: 0.16, green: 0.15, blue: 0.14)
+    static let paper = Paper.paper
+    static let ink = Paper.ink
     static let cinnabar = Color(red: 0.70, green: 0.20, blue: 0.15)
 
     @Environment(Fish.self) private var fish

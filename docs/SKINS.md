@@ -12,9 +12,9 @@ Plinth reads your skins from:
 ~/Library/Application Support/Plinth/Skins/
 ```
 
-Plinth creates the folder on first launch. **Skin → Open Skins Folder** opens it, and **Skin → Add Skins…** copies images, folders or `.plinthskin` files into it. Dropping one on the fish, or opening a `.plinthskin` file, does the same. Copying replaces any skin of the same name that is already there.
+Plinth creates the folder on first launch. **Settings → Skins → Open Skins Folder** opens it, and **Add Skins…** beside it copies images, folders or `.plinthskin` files into it. Dropping one on the fish, or opening a `.plinthskin` file, does the same. Copying replaces any skin of the same name that is already there.
 
-Each entry in the folder is one skin, either a single image or a folder. Plinth lists them after the twenty-one built-in skins, sorted by file name. Entries it can't read, such as a folder without `idle.png` or a stray `.DS_Store`, are skipped without a message.
+Each entry in the folder is one skin, either a single image or a folder. Plinth lists them after the fifteen built-in skins, sorted by file name. Entries it can't read, such as a folder without `idle.png` or a stray `.DS_Store`, are skipped without a message.
 
 A skin's identity is its file or folder name. Plinth remembers the skin you wear by that name, so renaming a skin you're wearing switches you back to the ink fish.
 
@@ -34,7 +34,7 @@ Finder's **Compress** works too; rename the `.zip` to `.plinthskin`.
 
 ## Single-image skins
 
-Any image file macOS can open (PNG, JPEG, HEIC, TIFF, and so on) is a skin on its own. It has an idle frame only: no blink, no hit, the shared mallet and burst, the default strike point, and the wooden knock. Its name in the menus is the file name without the extension.
+Any image file macOS can open (PNG, JPEG, HEIC, TIFF, and so on) is a skin on its own. It has an idle frame only: no blink, no hit, the shared mallet and burst, the default strike point, and the wooden knock. Its name in Settings is the file name without the extension.
 
 ## Folder skins
 
@@ -76,7 +76,8 @@ Folder skins read PNG files only, by these exact lowercase names. A folder witho
 
 | Key | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `name` | string | file name | The skin's name in the menus and in Settings. |
+| `name` | string | file name | The skin's name in Settings. |
+| `names` | object of strings | none | The name in other languages, keyed by language code as an app's localizations are: `{ "zh-Hans": "我的皮肤" }`. Plinth shows the one for the language it is running in, and `name` when there is none. |
 | `strike` | array of two numbers | `[0.6, 0.3]` | Where the centre of the mallet's head lands, as fractions of the frame's width and height, measured from the top-left corner. Keep both within 0 to 1. |
 | `voice` | string | `"wood"` | Which knock the skin makes. See [Voices](#voices). |
 | `glow` | string | none | The colour of the pedestal's neon, as `#RRGGBB`, for a skin whose base lights up. The incense censer beside the fish catches it on its near side. Leave it out when the base has no light. |
@@ -137,7 +138,9 @@ Without `mallet.png`, a skin uses the shared [`App/Resources/mallet.png`](../App
 
 At the moment of impact the handle rises 15° above horizontal toward the grip. At rest, the mallet is raised a further 25°, or `raise` degrees when `skin.json` sets it. A knock from typing skips the small lift before the swing.
 
-The mallet rests on the wood for 0.42 seconds, then lifts over 0.85 seconds without bouncing (压槌) on: the 108th auto-knock with **Stop after 108**; a rested knock by hand (more than 90% bloom); the third call knock; the fifteenth **Quickening** knock; the incense's opening knock; and the long-typing bell. Ordinary and typed knocks keep their rebound. A new knock interrupts the hold; a drag before impact still cancels the swing. This uses the same mallet and strike point, with no extra skin files or keys, and remains bounce-free with Reduce Motion.
+The mallet rests on the wood for 0.42 seconds, then lifts over 0.85 seconds without bouncing (压槌) on: the 108th auto-knock with **Stop after 108**; a rested knock by hand (more than 90% bloom); the fifteenth **Quickening** knock; the incense's opening knock; and the long-typing bell. Ordinary and typed knocks keep their rebound. A new knock interrupts the hold; a drag before impact still cancels the swing. This uses the same mallet and strike point, with no extra skin files or keys, and remains bounce-free with Reduce Motion.
+
+The third call knock doesn't lift at all: it leaves the mallet lying on the wood. A key or a click that answers the call lifts it over the same 0.85 seconds. If no one answers, it lies there until the next knock of any kind, which lifts it only 60% of the way to rest before it swings. Meanwhile the menu bar icon shows the mallet lying on the figure, placed by the same `strike`, so the figure in it is a little smaller. A skin needs nothing more for any of this.
 
 Lighting incense hushes typed knocks for about 15 seconds and pauses auto-knock until the closing call is over and the spent stick has gone, or until the incense is put out early. A pause preserves auto-knock's enabled setting and its round; cancelled swings do not count as landings. The long-typing bell waits three quiet seconds before its held knock, followed by about 15 quiet seconds. Hand knocks and settings previews remain available.
 
@@ -174,28 +177,24 @@ The built-in skins live in [`App/Resources/Skins`](../App/Resources/Skins), one 
 | Folder | Name | 中文名 | Voice | Strike | Hit frame | Mallet | Burst |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `ink-fish` | Ink Fish | 水墨鱼 | `ink` | 0.625, 0.289 | no | own | own |
-| `abacus` | Abacus | 算盘 | `bead` | 0.5, 0.325 | yes | own | own |
 | `bamboo-block` | Bamboo Block | 竹节 | `bamboo` | 0.52, 0.485 | no | own | own |
 | `bianzhong` | Bianzhong | 编钟 | `bell` | 0.56, 0.66 | yes | own | own |
 | `cartoon-fish` | Cartoon Fish | 卡通鱼 | `cartoon` | 0.625, 0.296 | no | own | own |
 | `cloud-gong` | Cloud Gong | 云板 | `plate` | 0.56, 0.6 | yes | own | own |
-| `crt-terminal` | CRT Terminal | CRT 终端 | `crt` | 0.52, 0.395 | yes | own | own |
 | `fish-board` | Fish Board | 鱼板 | `board` | 0.56, 0.69 | no | own | shared |
 | `jade-fish` | Jade Fish | 玉鱼 | `jade` | 0.625, 0.304 | no | own | own |
 | `moss-stone` | Moss Stone | 苔石 | `stone` | 0.52, 0.375 | no | own | own |
-| `mug` | Mug | 马克杯 | `ceramic` | 0.56, 0.36 | no | own | own |
-| `piston` | Piston | 活塞 | `piston` | 0.52, 0.39 | yes | own | own |
 | `pixel-fish` | Pixel Fish | 像素鱼 | `pixel` | 0.625, 0.326 | no | own | own |
 | `porcelain-fish` | Porcelain Fish | 青花瓷鱼 | `porcelain` | 0.625, 0.31 | no | own | own |
 | `red-lacquer` | Red Lacquer | 朱漆 | `lacquer` | 0.625, 0.306 | no | own | own |
-| `seal` | Seal | 印章 | `stamp` | 0.55, 0.39 | no | own | own |
 | `singing-bowl` | Singing Bowl | 铜磬 | `bowl` | 0.625, 0.39 | no | own | own |
-| `space-key` | Space Key | 空格键 | `key` | 0.52, 0.515 | yes | own | own |
 | `stone-chime` | Stone Chime | 石磬 | `chime` | 0.52, 0.65 | yes | own | own |
 | `temple-fish` | Temple Fish | 古木鱼 | `temple` | 0.58, 0.298 | no | own | own |
 | `wooden-fish` | Wooden Fish | 木鱼 | `wood` | 0.625, 0.316 | no | shared | shared |
 
 None of the built-in skins has blink frames. To add a built-in skin, add its folder here and its Chinese name to `Skins.strings`. If its art is new, credit it in [CREDITS.md](../CREDITS.md).
+
+Six skins that once shipped with Plinth (Abacus, CRT Terminal, Mug, Piston, Seal and Space Key) are now in the [community gallery](https://github.com/rubycatco/plinth-skins). The app still carries them, in [`App/Resources/Retired`](../App/Resources/Retired), only so that a fish wearing one when it updates keeps it: on launch, Plinth copies that one skin into the skins folder, unless a skin of its name is already there, and wears it from there. Their Chinese names are in their `skin.json`, under `names`.
 
 ## Checklist
 

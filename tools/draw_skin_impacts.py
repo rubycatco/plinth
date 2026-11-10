@@ -9,6 +9,9 @@ transparent, rendered at 1024 px and downsampled to 256, like the bowl's ripple.
 The images are original and released under CC0 (the code itself is MIT).
 
 Usage: python draw_skin_impacts.py <skins-directory>
+
+Draws those of its skins that are in the directory: App/Resources/Skins for
+the ones that ship, App/Resources/Retired for the ones now in the gallery.
 """
 import sys
 from pathlib import Path
@@ -33,6 +36,8 @@ for name, color in [
     ("stone-chime", (206, 238, 224)),
     ("temple-fish", (236, 200, 140)),
 ]:
+    if not (Path(sys.argv[1]) / name).is_dir():
+        continue
     if name in ("space-key", "abacus"):
         # A rounded square, flattened to sit on the top of the keycap.
         r = (dx ** 4 + (dy / 0.60) ** 4) ** 0.25

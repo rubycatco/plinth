@@ -4,7 +4,7 @@ public struct Quote: Identifiable, Equatable {
     public let id = UUID()
     public let text: String
     public let source: String
-    /// The words leave an empty bubble before it, too, goes away.
+    /// The words leave the slip they were on empty before it, too, goes away.
     public var leavesSilence = false
 
     public init(text: String, source: String, leavesSilence: Bool = false) {

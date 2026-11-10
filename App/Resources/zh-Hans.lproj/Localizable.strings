@@ -4,20 +4,6 @@
 /* Menu bar and right-click menu */
 "Knock" = "敲一下";
 "Auto-Knock" = "自动敲击";
-"Pace" = "节奏";
-"With the breath · every 6 s" = "随息 · 每 6 秒";
-"Slow · every 2 s" = "慢 · 每 2 秒";
-"Moderate · every 1 s" = "中 · 每 1 秒";
-"Every %.1f s" = "每 %.1f 秒";
-"Fast · every 0.5 s" = "快 · 每 0.5 秒";
-"Knock as You Type" = "打字时跟着敲";
-"Placement" = "位置";
-"Above windows" = "浮在窗口上方";
-"On the desktop" = "放在桌面上";
-"Heard, not seen" = "只闻其声";
-"Skin" = "皮肤";
-"Add Skins…" = "添加皮肤…";
-"Open Skins Folder" = "打开皮肤文件夹";
 "Settings…" = "设置…";
 "Quit Plinth" = "退出 Plinth";
 "Plinth" = "Plinth";
@@ -31,8 +17,7 @@
 "Sound" = "声音";
 "The longer the quiet before a knock, the longer it rings." = "敲之前静得越久，余音越长。";
 "While You Work" = "做事时";
-"Each key you press, in any app, knocks once. Plinth never learns which key, and needs no permission." = "在任何 App 里每按一个键，就敲一下。Plinth 从不知道按的是哪个键，也不需要任何权限。";
-"While another app listens to a microphone, as in a call, only a knock by hand sounds. Plinth never listens itself." = "别的 App 在用麦克风时（比如开会），只有亲手敲才会响。Plinth 自己从不收音。";
+"Plinth never learns which key you press, never listens to a microphone itself, and needs no permission." = "Plinth 从不知道你按的是哪个键，自己从不收音，也不需要任何权限。";
 "The Fish" = "木鱼";
 "Volume" = "音量";
 "Knock as you type" = "打字时跟着敲";
@@ -41,14 +26,17 @@
 "Record Key" = "录制按键";
 "Press a key…" = "请按一个键…";
 "Clear" = "清除";
-"Space" = "空格";
-"A key, a foot pedal or a Stream Deck button can be the mallet: press it in any app and the fish is knocked by hand. An F-key can stand alone; any other key needs two modifiers, one of them ⌘ or ⌃, so ⌘C, ⌃C and the like keep working." = "一个键、一只脚踏板或一颗 Stream Deck 按键，都可以当作木槌：在任何 App 里按下它，就如亲手敲一下。F 键可以单独用；其他键要配两个修饰键，其中一个是 ⌘ 或 ⌃，这样 ⌘C、⌃C 这类快捷键照常可用。";
-"After half an hour of typing with no three-minute rest, the fish falls quiet for three seconds, then knocks once with a held mallet. Typed knocks and auto-knock stay quiet for three breaths, about 15 seconds. Nothing is counted or kept." = "连着打字半小时，中间没歇过三分钟，木鱼先静三秒，再独敲一下，压槌稍驻。打字敲击和自动敲击再静三息，约 15 秒。不计数，也不记录。";
+/* The space bar, as a mallet key. Not "Space", which is the room the knock rings in. */
+"Space (key)" = "空格";
+"An F-key can stand alone. Any other key needs two modifiers, one of them ⌘ or ⌃." = "F 键可以单独用。其他键要配两个修饰键，其中一个是 ⌘ 或 ⌃。";
 "Knock on its own" = "让它自己敲";
-"Every" = "每隔";
-"%.1f s" = "%.1f 秒";
+"Pace" = "节奏";
 "Stop after 108 knocks, one turn of a mala" = "敲满 108 下就停，正好念珠一圈";
 "Size" = "大小";
+"Placement" = "位置";
+"Above windows" = "浮在窗口上方";
+"On the desktop" = "放在桌面上";
+"Heard, not seen" = "只闻其声";
 "Small" = "小";
 "Medium" = "中";
 "Large" = "大";
@@ -56,11 +44,15 @@
 
 /* Settings: Skins */
 "Skins" = "皮肤";
+/* The iPhone's palette button. */
+"Skin" = "皮肤";
 "Built In" = "内置";
 "Your Skins" = "你的皮肤";
 "No skins of your own yet." = "还没有你自己的皮肤。";
 "Click a skin to wear it. One of your own can be a single image or a folder of frames; right-click it to export a .plinthskin to share." = "点一下就换上。自己的皮肤可以是一张图片，也可以是一组帧图的文件夹；右键点它，可以导出成 .plinthskin 分享给别人。";
 "How to Make a Skin" = "怎样做皮肤";
+"Add Skins…" = "添加皮肤…";
+"Open Skins Folder" = "打开皮肤文件夹";
 "Choose images, skin folders that contain idle.png, or .plinthskin files" = "选择图片、包含 idle.png 的皮肤文件夹，或 .plinthskin 文件";
 
 /* Settings: Why a Fish */
@@ -69,9 +61,9 @@
 
 /* Incense */
 "Light Incense" = "点一炷香";
-"Half a stick · 25 minutes" = "半炷香 · 25 分钟";
-"One stick · 45 minutes" = "一炷香 · 45 分钟";
-"Long incense · 60 minutes" = "长香 · 60 分钟";
+"Half a stick" = "半炷香";
+"One stick" = "一炷香";
+"Long incense" = "长香";
 "Put Out the Incense" = "熄香";
 "Incense" = "香";
 

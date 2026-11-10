@@ -87,36 +87,48 @@ struct FishView: View {
     @ViewBuilder private var caption: some View {
         if let notice = fish.notice {
             QuoteView(quote: notice.quote)
-                // Both the question and its source fade; the bubble keeps
+                // Both the question and its source fade; the slip keeps
                 // their space, but VoiceOver has no hidden words to read.
                 .opacity(notice.silent ? 0 : 1)
                 .accessibilityHidden(notice.silent)
-                .bubble()
+                .slip()
         }
     }
 }
 
+/// The fish's line, in the ink and the Song face of the scroll in Settings >
+/// Why a Fish, which is also the face the iPhone writes it in.
 struct QuoteView: View {
     let quote: Quote
 
     var body: some View {
         VStack(spacing: 3) {
             Text(quote.text)
-                .font(.system(size: 12, design: .serif))
+                .font(.custom("Songti SC", size: 13))
+                .foregroundStyle(Paper.ink.opacity(0.88))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             Text("— \(quote.source)")
-                .font(.system(size: 10, design: .serif))
-                .foregroundStyle(.secondary)
+                .font(.custom("Songti SC", size: 10))
+                .foregroundStyle(Paper.ink.opacity(0.5))
         }
     }
 }
 
+/// The rice paper and ink the fish's words are written in, here and on the
+/// scroll. Paper stays paper in Dark Mode too; ink needs a light ground.
+enum Paper {
+    static let paper = Color(red: 0.953, green: 0.933, blue: 0.890)
+    static let ink = Color(red: 0.16, green: 0.15, blue: 0.14)
+}
+
 private extension View {
-    func bubble() -> some View {
+    /// A slip of the scroll's paper under the fish, with the words on it.
+    func slip() -> some View {
         padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 9))
+            .background(Paper.paper, in: RoundedRectangle(cornerRadius: 3))
+            .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Paper.ink.opacity(0.08), lineWidth: 0.5))
             // Rises a little into place as it appears, and sinks as it goes.
             .transition(.opacity.combined(with: .offset(y: 4)).combined(with: .scale(scale: 0.97, anchor: .top)))
     }
@@ -131,66 +143,18 @@ struct MenuBarIcon: View {
     }
 }
 
-/// The skins that ship with the app, then any in the skins folder, each
-/// beside a small picture of itself. Choosing one knocks once in its voice.
-struct SkinPicker: View {
-    @Environment(Fish.self) private var fish
-
-    var body: some View {
-        let wear = Binding(get: { fish.skin }, set: { fish.skin = $0; fish.preview() })
-        Picker("Skin", selection: wear) {
-            ForEach(SkinOption.builtIn) { item($0) }
-            if !fish.skins.isEmpty {
-                Divider()
-                ForEach(fish.skins) { item($0) }
-            }
-        }
-        .pickerStyle(.inline)
-        // The menu it sits in already says Skin.
-        .labelsHidden()
-    }
-
-    private func item(_ option: SkinOption) -> some View {
-        Label {
-            Text(option.title)
-        } icon: {
-            Image(nsImage: option.pack.idle.thumbnail(side: 16))
-        }
-        .labelStyle(.titleAndIcon)
-        .tag(option.id)
-    }
-}
-
-/// Shared by the menu bar item and the fish's right-click menu.
+/// Shared by the menu bar item and the fish's right-click menu. It holds
+/// what the fish can be asked to do; how it knocks, where it sits and what
+/// it wears are in Settings.
 struct FishMenu: View {
     @Environment(Fish.self) private var fish
     @Environment(\.openSettings) private var openSettings
-
-    /// The paces the menu offers; Settings can set any other.
-    private static let paces = [6.0, 2.0, 1.0, 0.5]
 
     var body: some View {
         @Bindable var fish = fish
         Button("Knock") { fish.knock() }
         Divider()
         Toggle("Auto-Knock", isOn: $fish.autoKnock)
-        Picker("Pace", selection: $fish.interval) {
-            // About one breath out: a knock to each, to follow the breath by.
-            Text("With the breath · every 6 s").tag(6.0)
-            Text("Slow · every 2 s").tag(2.0)
-            Text("Moderate · every 1 s").tag(1.0)
-            Text("Fast · every 0.5 s").tag(0.5)
-            // A pace set in Settings, so the menu still shows what is chosen.
-            if !Self.paces.contains(fish.interval) {
-                Divider()
-                Text("Every \(fish.interval, specifier: "%.1f") s").tag(fish.interval)
-            }
-        }
-        Picker("Rhythm", selection: $fish.rhythm) {
-            ForEach(Rhythm.allCases) { Text($0.title).tag($0) }
-        }
-        Divider()
-        Toggle("Knock as You Type", isOn: $fish.knockAsYouType)
         if fish.incense == nil {
             Menu("Light Incense") {
                 ForEach(IncenseLength.allCases) { length in
@@ -199,17 +163,6 @@ struct FishMenu: View {
             }
         } else {
             Button("Put Out the Incense") { fish.putOutIncense() }
-        }
-        Divider()
-        Picker("Placement", selection: $fish.placement) {
-            ForEach(Placement.allCases) { Text($0.title).tag($0) }
-        }
-        Menu("Skin") {
-            SkinPicker()
-            Divider()
-            Button("Add Skins…") { fish.addSkins() }
-            Button("Open Skins Folder") { NSWorkspace.shared.open(Fish.skinsDirectory) }
-            Button("Browse More Skins…") { NSWorkspace.shared.open(Fish.moreSkins) }
         }
         Divider()
         let updates = Updates.shared

@@ -1,11 +1,14 @@
-"""Render Plinth's show-off video: every built-in skin knocked in turn, then all
-twenty-one played as a drum kit.
+"""Render Plinth's show-off video: every skin knocked in turn, then all
+twenty-one played as a drum kit. Its cast is the skins that shipped with
+Plinth when it was made; six have since moved to the gallery, and are drawn
+from App/Resources/Retired.
 
 Frames are drawn with PIL from the skins' own sprites, with the mallet swing,
 give and burst timed like Sprites.swift. The soundtrack is the skins' real
 knocks, synthesized by knock_synth.py, a numpy port of KnockSynth.swift.
 
-Needs numpy, scipy, pillow, ffmpeg and the Noto Serif/Sans CJK fonts.
+Needs numpy, scipy, pillow, ffmpeg and the Noto Serif/Sans CJK fonts (the
+.ttc files, in /usr/share/fonts/opentype/noto or the folder PLINTH_FONTS names).
 
 Usage: python showoff_video.py <out.mp4> [--vertical]
        python showoff_video.py <out-dir> [--vertical] --stills <seconds>...
@@ -74,8 +77,10 @@ def load(path):
 
 HIT = -15.0                            # the mallet's angle as it lands
 PACKS = []
-for name, folder, zh, voice, col, cap in SKINS:
-    d = f"{RES}/Skins/{folder}"
+# Whether each skin still ships with the app, or has moved to the gallery.
+SHIPS = [(RES / "Skins" / folder).is_dir() for _, folder, *_ in SKINS]
+for (name, folder, zh, voice, col, cap), ships in zip(SKINS, SHIPS):
+    d = f"{RES}/{'Skins' if ships else 'Retired'}/{folder}"
     meta = json.load(open(f"{d}/skin.json"))
     PACKS.append(dict(idle=load(f"{d}/idle.png"), hit=load(f"{d}/hit.png"),
                       mallet=load(f"{d}/mallet.png") or load(f"{RES}/mallet.png"),
@@ -83,7 +88,7 @@ for name, folder, zh, voice, col, cap in SKINS:
                       screen=load(f"{d}/impact.png") is None, strike=meta["strike"],
                       rest=HIT + meta.get("raise", 25)))
 
-FONT = "/usr/share/fonts/opentype/noto/"
+FONT = os.environ.get("PLINTH_FONTS", "/usr/share/fonts/opentype/noto").rstrip("/") + "/"
 @lru_cache(None)
 def font(kind, size):
     f = {"serif": "NotoSerifCJK-Regular.ttc", "serifb": "NotoSerifCJK-Bold.ttc",
