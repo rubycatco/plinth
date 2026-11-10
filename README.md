@@ -6,7 +6,7 @@ English · [简体中文](README.zh-Hans.md) · [plinth.fish](https://plinth.fis
 
 A small wooden fish that lives on your Mac's desktop. Click it and it goes *tok*, nothing more. Knocking earns no merit (功德).
 
-![Under 「并无功德」 ("No merit at all"), Plinth's twenty-one built-in skins, each on its pedestal with its mallet raised: an ink-wash fish, the neon wooden fish, a cartoon fish, a jade fish, a pixel-art fish, a red lacquer fish, a singing bowl, a space key, a bamboo block, a moss stone, a piston, a CRT terminal, an abacus, a cloud gong, a blue-and-white porcelain fish, a bianzhong bell, a seal, a stone chime, a fish board, a mug, and an old temple fish](docs/skins.png)
+![Under 「并无功德」 ("No merit at all"), Plinth's fifteen built-in skins, each on its pedestal with its mallet raised: an ink-wash fish, the neon wooden fish, a cartoon fish, a jade fish, a pixel-art fish, a red lacquer fish, a singing bowl, a bamboo block, a moss stone, a cloud gong, a blue-and-white porcelain fish, a bianzhong bell, a stone chime, a fish board, and an old temple fish](docs/skins.png)
 
 The wooden fish (*muyu*) is a hollow temple block that Buddhist monks strike to keep time while chanting. Baizhang's monastic rules say why it is a fish: 「鱼昼夜常醒，刻木象形击之，所以警昏惰也。」 The fish is awake day and night, so wood is carved in its shape and struck, to rouse the drowsy and the slack. Plinth puts one, brushed in ink, on a small pedestal next to your windows.
 
@@ -103,7 +103,7 @@ In Shortcuts, Plinth adds a **Knock** action. Shortcuts runs it only in a signed
 
 ## Skins
 
-Twenty-one skins ship with Plinth, each with its own mallet and synthesized voice. The fish starts in ink, as on its icon; the neon wooden fish and the rest are in **Settings → Skins**. The abacus keeps no count, the seal leaves a 空 (empty) where it lands, and the mug splashes without spilling.
+Fifteen skins ship with Plinth: the fish, and what a hall is called by, each with its own mallet and synthesized voice. The fish starts in ink, as on its icon; the neon wooden fish and the rest are in **Settings → Skins**. The space key, piston, CRT terminal, abacus, seal, and mug shipped too, once, and have moved to the [community gallery](https://github.com/rubycatco/plinth-skins); a fish that was wearing one when it updated keeps it, in its own skins folder. There the abacus still keeps no count, the seal leaves a 空 (empty) where it lands, and the mug splashes without spilling.
 
 A skin of your own is a single image, or a folder with an `idle.png` and, optionally, blink and hit frames, its own mallet and burst, and a `skin.json` for its name, where the mallet lands, and which knock it makes:
 
@@ -114,7 +114,7 @@ my-skin/
 └── skin.json   { "name": "My Skin", "strike": [0.6, 0.3], "voice": "jade" }
 ```
 
-Put skins in `~/Library/Application Support/Plinth/Skins/`, or use **Settings → Skins → Add Skins…**. To share a skin, send it as a `.plinthskin` file, which installs with a double-click or a drop on the fish. More skins, made by other people, are in the [community gallery](https://github.com/rubycatco/plinth-skins) (**Settings → Skins → Browse More Skins…**). Plinth picks up changes while it runs.
+Put skins in `~/Library/Application Support/Plinth/Skins/`, or use **Settings → Skins → Add Skins…**. To share a skin, send it as a `.plinthskin` file, which installs with a double-click or a drop on the fish. More skins are in the [community gallery](https://github.com/rubycatco/plinth-skins) (**Settings → Skins → Browse More Skins…**). Plinth picks up changes while it runs.
 
 The [skin format](docs/SKINS.md) has the full specification: every file and key, the twenty-one knock voices, how the mallet and burst are positioned, animation timing, and the built-in skins.
 

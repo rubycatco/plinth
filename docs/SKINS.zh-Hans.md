@@ -14,7 +14,7 @@ Plinth 从这里读取你的皮肤：
 
 第一次启动时 Plinth 会创建这个文件夹。**设置 → 皮肤 → 打开皮肤文件夹** 可以打开它，旁边的 **添加皮肤…** 会把选中的图片、文件夹或 `.plinthskin` 文件复制进去，把它们拖到木鱼上、或者打开 `.plinthskin` 文件也一样，遇到同名的皮肤会直接替换。
 
-文件夹里的每一项就是一款皮肤，可以是单张图片，也可以是一个文件夹。它们按文件名排序，列在二十一款内置皮肤之后。读不了的项会被跳过，也不提示，比如没有 `idle.png` 的文件夹，或者混进来的 `.DS_Store`。
+文件夹里的每一项就是一款皮肤，可以是单张图片，也可以是一个文件夹。它们按文件名排序，列在十五款内置皮肤之后。读不了的项会被跳过，也不提示，比如没有 `idle.png` 的文件夹，或者混进来的 `.DS_Store`。
 
 皮肤靠文件名或文件夹名识别。Plinth 按这个名字记住你正在用的皮肤，所以给正在用的皮肤改名，木鱼会换回默认的水墨鱼。
 
@@ -77,6 +77,7 @@ my-skin/
 | 键 | 类型 | 默认值 | 含义 |
 | --- | --- | --- | --- |
 | `name` | 字符串 | 文件名 | 设置里显示的皮肤名字。 |
+| `names` | 字符串组成的对象 | 无 | 其他语言里的名字，以语言代码为键，和 App 的本地化写法相同：`{ "zh-Hans": "我的皮肤" }`。Plinth 显示当前界面语言对应的那一个，没有就用 `name`。 |
 | `strike` | 两个数字组成的数组 | `[0.6, 0.3]` | 槌头中心落在哪里，用画面宽和高的比例表示，从左上角算起。两个值都应在 0 到 1 之间。 |
 | `voice` | 字符串 | `"wood"` | 这款皮肤的敲击声，见[敲击声](#敲击声)。 |
 | `glow` | 字符串 | 无 | 底座霓虹灯的颜色，写成 `#RRGGBB`，给底座会发光的皮肤用。木鱼旁的香炉靠近底座的一侧会映上这道光。底座不发光就不要写。 |
@@ -176,28 +177,24 @@ Plinth 会监视皮肤文件夹。添加、删除或重命名皮肤，大约半�
 | 文件夹 | 英文名 | 中文名 | 音色 | 落点 | 被敲中画面 | 木槌 | 敲击效果 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `ink-fish` | Ink Fish | 水墨鱼 | `ink` | 0.625, 0.289 | 无 | 自带 | 自带 |
-| `abacus` | Abacus | 算盘 | `bead` | 0.5, 0.325 | 有 | 自带 | 自带 |
 | `bamboo-block` | Bamboo Block | 竹节 | `bamboo` | 0.52, 0.485 | 无 | 自带 | 自带 |
 | `bianzhong` | Bianzhong | 编钟 | `bell` | 0.56, 0.66 | 有 | 自带 | 自带 |
 | `cartoon-fish` | Cartoon Fish | 卡通鱼 | `cartoon` | 0.625, 0.296 | 无 | 自带 | 自带 |
 | `cloud-gong` | Cloud Gong | 云板 | `plate` | 0.56, 0.6 | 有 | 自带 | 自带 |
-| `crt-terminal` | CRT Terminal | CRT 终端 | `crt` | 0.52, 0.395 | 有 | 自带 | 自带 |
 | `fish-board` | Fish Board | 鱼板 | `board` | 0.56, 0.69 | 无 | 自带 | 共用 |
 | `jade-fish` | Jade Fish | 玉鱼 | `jade` | 0.625, 0.304 | 无 | 自带 | 自带 |
 | `moss-stone` | Moss Stone | 苔石 | `stone` | 0.52, 0.375 | 无 | 自带 | 自带 |
-| `mug` | Mug | 马克杯 | `ceramic` | 0.56, 0.36 | 无 | 自带 | 自带 |
-| `piston` | Piston | 活塞 | `piston` | 0.52, 0.39 | 有 | 自带 | 自带 |
 | `pixel-fish` | Pixel Fish | 像素鱼 | `pixel` | 0.625, 0.326 | 无 | 自带 | 自带 |
 | `porcelain-fish` | Porcelain Fish | 青花瓷鱼 | `porcelain` | 0.625, 0.31 | 无 | 自带 | 自带 |
 | `red-lacquer` | Red Lacquer | 朱漆 | `lacquer` | 0.625, 0.306 | 无 | 自带 | 自带 |
-| `seal` | Seal | 印章 | `stamp` | 0.55, 0.39 | 无 | 自带 | 自带 |
 | `singing-bowl` | Singing Bowl | 铜磬 | `bowl` | 0.625, 0.39 | 无 | 自带 | 自带 |
-| `space-key` | Space Key | 空格键 | `key` | 0.52, 0.515 | 有 | 自带 | 自带 |
 | `stone-chime` | Stone Chime | 石磬 | `chime` | 0.52, 0.65 | 有 | 自带 | 自带 |
 | `temple-fish` | Temple Fish | 古木鱼 | `temple` | 0.58, 0.298 | 无 | 自带 | 自带 |
 | `wooden-fish` | Wooden Fish | 木鱼 | `wood` | 0.625, 0.316 | 无 | 共用 | 共用 |
 
 内置皮肤都没有眨眼画面。要新增一款内置皮肤，把它的文件夹放进上面的目录，再把中文名加进 `Skins.strings`。如果用了新的美术素材，在 [CREDITS.md](../CREDITS.md) 里注明。
+
+算盘、CRT 终端、马克杯、活塞、印章和空格键这六款原先也是内置的，现在在[社区画廊](https://github.com/rubycatco/plinth-skins)里。App 里还留着它们，放在 [`App/Resources/Retired`](../App/Resources/Retired)，格式相同，只为一件事：升级时正穿着其中一款的木鱼不必换掉。启动时，Plinth 把那一款复制进皮肤文件夹（已有同名皮肤就不复制），之后从那里读取。它们的中文名写在各自 `skin.json` 的 `names` 里。
 
 ## 检查清单
 

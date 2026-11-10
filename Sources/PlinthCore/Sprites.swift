@@ -70,6 +70,26 @@ public struct SkinOption: Identifiable {
     private static func title(_ folder: String, _ english: String) -> String {
         Bundle.main.localizedString(forKey: folder, value: english, table: "Skins")
     }
+
+    /// A skin that once shipped with the app and has since moved to the
+    /// gallery stays with a fish that wears it. If `id` is such a skin, one
+    /// kept in `retired`, it is copied into `skins`, the fish's own skins
+    /// folder, unless one of its name is there already, and its id there is
+    /// returned. Nil for any other skin, and nothing is copied.
+    public static func handOver(_ id: String, from retired: URL?, to skins: URL) -> String? {
+        let prefix = "builtin/"
+        guard let retired, id.hasPrefix(prefix) else { return nil }
+        let name = String(id.dropFirst(prefix.count))
+        // A folder of this name, directly in `retired`: an id is not a path.
+        guard !name.isEmpty, !name.contains("/"), !name.hasPrefix(".") else { return nil }
+        let kept = retired.appending(path: name)
+        guard FileManager.default.fileExists(atPath: kept.appending(path: "idle.png").path) else { return nil }
+        let own = skins.appending(path: name)
+        if !FileManager.default.fileExists(atPath: own.path) {
+            guard (try? FileManager.default.copyItem(at: kept, to: own)) != nil else { return nil }
+        }
+        return name
+    }
 }
 
 extension CGImage {

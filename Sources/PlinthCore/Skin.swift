@@ -51,8 +51,11 @@ public struct Skin<Image> {
     }
 
     /// The skin at `url`, decoding each frame with `image`, which gives nil
-    /// for a file that is missing or isn't an image.
-    public static func load(_ url: URL?, image: (URL) -> Image?) -> Skin? {
+    /// for a file that is missing or isn't an image. Its name is the one
+    /// `skin.json` gives for `language`, the one the app is showing, if it
+    /// gives one.
+    public static func load(_ url: URL?, language: String? = Bundle.main.preferredLocalizations.first,
+                            image: (URL) -> Image?) -> Skin? {
         guard let url else { return nil }
         if let single = image(url) { return Skin(idle: single) }
         func frame(_ name: String) -> Image? { image(url.appending(path: "\(name).png")) }
@@ -68,7 +71,7 @@ public struct Skin<Image> {
                         mallet: frame("mallet"), impact: frame("impact"))
         if let data = try? Data(contentsOf: url.appending(path: "skin.json")),
            let meta = try? JSONDecoder().decode(SkinMeta.self, from: data) {
-            skin.name = meta.name
+            skin.name = language.flatMap { meta.names?[$0] } ?? meta.name
             skin.voice = meta.voice
             if let s = meta.strike, s.count == 2 { skin.strike = CGPoint(x: s[0], y: s[1]) }
             skin.glow = meta.glow.flatMap(SkinGlow.init(hex:))
@@ -81,6 +84,8 @@ public struct Skin<Image> {
 /// What `skin.json` may say.
 private struct SkinMeta: Decodable {
     var name: String?
+    /// The name in other languages, keyed as an app's localizations are: "zh-Hans".
+    var names: [String: String]?
     var strike: [Double]?
     var voice: String?
     var glow: String?

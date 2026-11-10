@@ -263,7 +263,15 @@ final class Fish {
         placement = Placement(rawValue: d.string(forKey: "placement") ?? "") ?? .floating
         launchAtLogin = SMAppService.mainApp.status == .enabled
         // A skin is stored only once one is chosen; until then, the ink fish.
-        skin = d.string(forKey: "skin") ?? SkinOption.inkFish.id
+        // One that has moved to the gallery since it was chosen comes along,
+        // into the fish's own skins. Stored by hand: nothing is observed yet.
+        var worn = d.string(forKey: "skin") ?? SkinOption.inkFish.id
+        if let kept = SkinOption.handOver(worn, from: Bundle.main.url(forResource: "Retired", withExtension: nil),
+                                          to: Self.skinsDirectory) {
+            worn = kept
+            d.set(kept, forKey: "skin")
+        }
+        skin = worn
         refreshSkins()
         loadSkin()
         watchSkins()
