@@ -307,8 +307,8 @@ private enum VolumeEnd {
 /// that explains it written top to bottom, right to left, with its source
 /// and a seal. It stays paper in Dark Mode too; ink needs a light ground.
 private struct AboutSettings: View {
-    static let paper = Color(red: 0.953, green: 0.933, blue: 0.890)
-    static let ink = Color(red: 0.16, green: 0.15, blue: 0.14)
+    static let paper = Paper.paper
+    static let ink = Paper.ink
     static let cinnabar = Color(red: 0.70, green: 0.20, blue: 0.15)
 
     @Environment(Fish.self) private var fish

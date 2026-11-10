@@ -87,36 +87,48 @@ struct FishView: View {
     @ViewBuilder private var caption: some View {
         if let notice = fish.notice {
             QuoteView(quote: notice.quote)
-                // Both the question and its source fade; the bubble keeps
+                // Both the question and its source fade; the slip keeps
                 // their space, but VoiceOver has no hidden words to read.
                 .opacity(notice.silent ? 0 : 1)
                 .accessibilityHidden(notice.silent)
-                .bubble()
+                .slip()
         }
     }
 }
 
+/// The fish's line, in the ink and the Song face of the scroll in Settings >
+/// Why a Fish, which is also the face the iPhone writes it in.
 struct QuoteView: View {
     let quote: Quote
 
     var body: some View {
         VStack(spacing: 3) {
             Text(quote.text)
-                .font(.system(size: 12, design: .serif))
+                .font(.custom("Songti SC", size: 13))
+                .foregroundStyle(Paper.ink.opacity(0.88))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             Text("— \(quote.source)")
-                .font(.system(size: 10, design: .serif))
-                .foregroundStyle(.secondary)
+                .font(.custom("Songti SC", size: 10))
+                .foregroundStyle(Paper.ink.opacity(0.5))
         }
     }
 }
 
+/// The rice paper and ink the fish's words are written in, here and on the
+/// scroll. Paper stays paper in Dark Mode too; ink needs a light ground.
+enum Paper {
+    static let paper = Color(red: 0.953, green: 0.933, blue: 0.890)
+    static let ink = Color(red: 0.16, green: 0.15, blue: 0.14)
+}
+
 private extension View {
-    func bubble() -> some View {
+    /// A slip of the scroll's paper under the fish, with the words on it.
+    func slip() -> some View {
         padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 9))
+            .background(Paper.paper, in: RoundedRectangle(cornerRadius: 3))
+            .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Paper.ink.opacity(0.08), lineWidth: 0.5))
             // Rises a little into place as it appears, and sinks as it goes.
             .transition(.opacity.combined(with: .offset(y: 4)).combined(with: .scale(scale: 0.97, anchor: .top)))
     }
