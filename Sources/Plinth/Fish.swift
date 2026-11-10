@@ -92,6 +92,12 @@ final class Fish {
 
     /// The mallet's latest swing; each new one swings it again.
     private(set) var swing = Swing()
+    /// The mallet lies on the wood, left there by a call no one answered,
+    /// until the next knock lifts it. Nothing is counted: after three calls
+    /// it lies as it does after one.
+    private(set) var malletRests = false {
+        didSet { if malletRests != oldValue { drawMenuIcon() } }
+    }
     /// A swing by hand still in the air, until the mallet lands.
     @ObservationIgnored private var handSwing: (serial: Int, task: Task<Void, Never>)?
     /// A typed key's short swing still in the air, cancelled if a knock by hand
@@ -115,10 +121,12 @@ final class Fish {
     private(set) var incense: Incense?
     @ObservationIgnored private var incenseTask: Task<Void, Never>?
     /// The fish calling you back, while it sounds, and when its first knock
-    /// landed, from which a key or click anywhere ends the call. See `call()`.
+    /// landed, from which a key or click anywhere ends the call, if the call
+    /// could be heard. See `call()`.
     @ObservationIgnored private var callTask: Task<Void, Never>?
     @ObservationIgnored private var callSwing: Task<Void, Never>?
     @ObservationIgnored private var callLanded = Double.infinity
+    @ObservationIgnored private var callHeard = false
     /// When the last key went down, and when the stretch of typing it belongs
     /// to began, on a clock that keeps going while the Mac sleeps, since a
     /// night's sleep is a rest. Kept only for the bell, never stored.
@@ -200,7 +208,9 @@ final class Fish {
         }
     }
     private(set) var pack = SkinOption.inkFish.pack
-    /// The worn skin, small enough for the menu bar.
+    /// The worn skin, small enough for the menu bar, and its mallet with it
+    /// while it lies on the wood, so a call that went unanswered shows even
+    /// when the fish itself is unseen, or under a window.
     private(set) var menuIcon = SkinOption.inkFish.pack.idle.menuBarIcon()
     /// The skins in `skinsDirectory`.
     private(set) var skins: [SkinOption] = []
@@ -286,7 +296,8 @@ final class Fish {
     /// to 1 at its right. A `preview`, to hear a setting, always sounds and is
     /// never answered. A `full` knock rings as fully as after a long quiet,
     /// however lately the fish was knocked. `closing` rests the mallet on the
-    /// wood at a ritual's close; `settling` softens hurried typing.
+    /// wood at a ritual's close; `settling` softens hurried typing. Any knock
+    /// lifts a mallet that a call left on the wood.
     func knock(byHand: Bool = true, quick: Bool = false, at x: Double? = nil, preview: Bool = false,
                full: Bool = false, closing: Bool = false, settling: Float = 0) {
         // While the fish calls you back, other knocks keep quiet, so the call
@@ -298,10 +309,18 @@ final class Fish {
         strike(byHand: byHand, quick: quick, at: x, preview: preview, full: full, closing: closing, settling: settling)
     }
 
+    /// Whether a knock would be heard now: not with the volume all the way
+    /// down, and only one by hand, or to hear a setting, while another app
+    /// listens to a microphone.
+    private func sounds(byHand: Bool, preview: Bool = false) -> Bool {
+        volume > 0 && (byHand || preview || !quietWhileMicInUse || !Microphone.inUseByOthers())
+    }
+
+    /// `holds` leaves the mallet on the wood once it has landed.
     @discardableResult
     private func strike(byHand: Bool, quick: Bool = false, at x: Double? = nil, preview: Bool = false,
                         full: Bool = false, closing: Bool = false, settling: Float = 0,
-                        force: Float? = nil, automatic: Bool = false) -> Task<Void, Never> {
+                        force: Float? = nil, automatic: Bool = false, holds: Bool = false) -> Task<Void, Never> {
         if byHand {
             quickSwing?.cancel()
             quickSwing = nil
@@ -309,9 +328,10 @@ final class Fish {
         let delay = quick ? Swing.quickImpactDelay : Swing.impactDelay
         let silence = ProcessInfo.processInfo.systemUptime + delay - lastImpact
         let lingers = !quick && !preview && (closing || (byHand && (full || KnockSound.bloom(afterSilence: silence) > 0.9)))
-        swing = Swing(serial: swing.serial + 1, quick: quick, lingers: lingers)
+        swing = Swing(serial: swing.serial + 1, quick: quick, lingers: lingers, holds: holds, rises: malletRests)
+        malletRests = false
         let serial = swing.serial
-        let audible = volume > 0 && (byHand || preview || !quietWhileMicInUse || !Microphone.inUseByOthers())
+        let audible = sounds(byHand: byHand, preview: preview)
         // Wake the audio while the mallet is in the air, so the first knock
         // after a quiet lands with the mallet rather than a moment after it.
         if audible { sound.warm(for: delay) }
@@ -336,6 +356,8 @@ final class Fish {
             bloom = full ? 1 : KnockSound.bloom(afterSilence: now - lastImpact)
             lastImpact = now
             impacts += 1
+            // Unless another swing has begun since, this one's mallet stays down.
+            if holds && swing.serial == serial { malletRests = true }
             if audible {
                 sound.play(samples, volume: Float(volume), bloom: Float(bloom), unseen: placement == .unseen)
             }
@@ -390,6 +412,14 @@ final class Fish {
         swing = Swing(serial: swing.serial + 1, calledOff: true)
     }
 
+    /// Lift a mallet that a call left on the wood, or is about to, without a
+    /// knock: you are here.
+    private func liftMallet() {
+        guard swing.holds else { return }
+        swing = Swing(serial: swing.serial + 1, calledOff: true, rises: malletRests)
+        malletRests = false
+    }
+
     /// One knock to hear a setting just changed: the volume, the room, or a skin.
     func preview() {
         if spaceChange != nil {
@@ -401,10 +431,11 @@ final class Fish {
 
     /// Knock the ink fish painted on the About scroll: always the ink voice,
     /// heard through paper, whatever the fish on the desktop wears, and that
-    /// fish's mallet stays still. Like a preview, it always sounds, and a call
-    /// ends: you are here.
+    /// fish's mallet stays still, unless a call left it on the wood. Like a
+    /// preview, it always sounds, and a call ends: you are here.
     func knockPainting() {
         endCall()
+        liftMallet()
         guard volume > 0 else { return }
         sound.warm(for: 0)
         let knock = sound.synthesize(force: 0.58 + .random(in: -0.07...0.07), place: .random(in: -0.2...0.2), voice: "ink")
@@ -584,11 +615,15 @@ final class Fish {
 
     private func loadSkin() {
         pack = (allSkins.first { $0.id == skin } ?? SkinOption.inkFish).pack
-        menuIcon = pack.idle.menuBarIcon()
+        drawMenuIcon()
         sound.use(voice: pack.voice, space: Float(space))
         skinFileWatcher?.cancel()
         let isOwn = skins.contains { $0.id == skin }
         skinFileWatcher = isOwn ? watch(Self.skinsDirectory.appending(path: skin), [.write, .extend, .delete, .rename]) : nil
+    }
+
+    private func drawMenuIcon() {
+        menuIcon = malletRests ? pack.menuBarIcon(malletDown: true) : pack.idle.menuBarIcon()
     }
 
     func show(_ quote: Quote, for seconds: Double = 8) {
@@ -650,6 +685,7 @@ final class Fish {
         incenseTask = nil
         incense = nil
         endCall()
+        liftMallet()
         restartAuto()
     }
 
@@ -660,29 +696,45 @@ final class Fish {
     /// while one sounds is the same call. Like auto-knock, it is never answered.
     /// Once the first knock has sounded, a key or a click anywhere means you
     /// are back, and the rest of the call keeps quiet. One from before it,
-    /// such as the key that started a build, doesn't count.
+    /// such as the key that started a build, doesn't count. Nor does any, if
+    /// the call can't be heard, as while a microphone is in use: a key
+    /// pressed in a meeting is no answer to a call that made no sound.
+    ///
+    /// The last knock leaves the mallet on the wood. A call no one answers
+    /// leaves it there, for whoever comes back to see, until the next knock
+    /// of any kind lifts it; answered by a key or a click, it lifts at once.
     func call() {
         guard callTask == nil else { return }
         pauseAccompaniment()
         callLanded = .infinity
+        callHeard = false
         callTask = Task { [weak self] in
             for (index, stroke) in Self.callStrokes.enumerated() {
                 try? await Task.sleep(for: .seconds(stroke.gap))
                 guard let self, !Task.isCancelled else { return }
-                let answered = max(TypingWatcher.lastEvent(.keyDown), TypingWatcher.lastEvent(.leftMouseDown))
-                if answered > callLanded { return endCall() }
-                callSwing = strike(byHand: false, full: true, closing: index == 2, force: stroke.force)
+                if answeredFromAfar() { return endCall() }
+                let last = index == Self.callStrokes.count - 1
+                callSwing = strike(byHand: false, full: true, closing: last, force: stroke.force, holds: last)
                 if callLanded == .infinity {
                     callLanded = ProcessInfo.processInfo.systemUptime + Swing.impactDelay
+                    // Heard or not is settled once, as the first knock is made.
+                    callHeard = sounds(byHand: false)
                 }
             }
             try? await Task.sleep(for: .seconds(Self.callRest))
             guard let self, !Task.isCancelled else { return }
+            if answeredFromAfar() { liftMallet() }
             endCall()
         }
     }
 
-    /// End a call before its last knock: you are here.
+    /// Whether a key or a click anywhere has answered the call: one since its
+    /// first knock landed, if that knock could be heard.
+    private func answeredFromAfar() -> Bool {
+        callHeard && max(TypingWatcher.lastEvent(.keyDown), TypingWatcher.lastEvent(.leftMouseDown)) > callLanded
+    }
+
+    /// End a call, answered or run its length. The mallet is left as it is.
     private func endCall() {
         guard let callTask else { return }
         callTask.cancel()
@@ -690,6 +742,7 @@ final class Fish {
         callSwing?.cancel()
         callSwing = nil
         callLanded = .infinity
+        callHeard = false
         restartAuto()
     }
 
@@ -705,8 +758,9 @@ final class Fish {
         // back. When it went down, not when the watcher noticed: for the bell
         // alone it looks only about once a second, and a key from before the
         // knock may be noticed after it.
-        if callTask != nil, TypingWatcher.lastEvent(.keyDown) > callLanded {
+        if callTask != nil, callHeard, TypingWatcher.lastEvent(.keyDown) > callLanded {
             endCall()
+            liftMallet()
         }
         let now = Double(clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)) / 1e9
         let settling = knockAsYouType ? typingCadence.press(after: now - lastTyped) : 0

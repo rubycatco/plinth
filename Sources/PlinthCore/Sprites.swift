@@ -96,16 +96,16 @@ extension CGImage {
 }
 
 /// Shared sprites, and where the mallet's head and grip sit in its image.
-enum Sprite {
-    static let mallet = load("mallet")
+public enum Sprite {
+    public static let mallet = load("mallet")
     static let impact = load("impact")
-    static let malletHead = UnitPoint(x: 0.169, y: 0.505)
-    static let malletGrip = UnitPoint(x: 0.964, y: 0.505)
+    public static let malletHead = UnitPoint(x: 0.169, y: 0.505)
+    public static let malletGrip = UnitPoint(x: 0.964, y: 0.505)
     /// Mallet image size as a fraction of the frame.
-    static let malletSize = 0.6
+    public static let malletSize = 0.6
     /// At impact the handle rises this far above horizontal toward the grip;
     /// at rest the mallet is lifted the skin's `raise` further around the grip.
-    static let strikeDegrees = 15.0
+    public static let strikeDegrees = 15.0
 
     private static func load(_ name: String) -> SkinImage {
         Bundle.main.url(forResource: name, withExtension: "png").flatMap(picture) ?? SkinImage()
@@ -198,24 +198,37 @@ public struct SpriteFish: View {
         let quick = swing.quick
         // With Reduce Motion the mallet settles back without bouncing.
         let rebound: Spring = reduceMotion ? .smooth : .bouncy
+        // A mallet left on the wood lifts only partway before it swings again.
+        let top = swing.rises ? hit + pack.raise * 0.6 : rest + 7
         return Image(sprite: pack.mallet ?? Sprite.mallet)
             .resizable()
             .frame(width: size, height: size)
-            .keyframeAnimator(initialValue: rest, trigger: swing) { content, angle in
+            // A track that ends stays where it ended, and the next starts from
+            // the value given here: from the wood, after a swing that held.
+            .keyframeAnimator(initialValue: swing.rises ? hit : rest, trigger: swing) { content, angle in
                 content.rotationEffect(.degrees(angle), anchor: Sprite.malletGrip)
             } keyframes: { _ in
                 KeyframeTrack {
                     if swing.calledOff {
-                        // Pulled back mid-swing: up to rest, without a sound.
-                        SpringKeyframe(rest, duration: 0.35, spring: .smooth)
+                        if swing.rises {
+                            // Lifted off the wood it was left on, as slowly as 压槌 lifts.
+                            LinearKeyframe(rest, duration: 0.85, timingCurve: .easeInOut)
+                        } else {
+                            // Pulled back mid-swing: up to rest, without a sound.
+                            SpringKeyframe(rest, duration: 0.35, spring: .smooth)
+                        }
                     } else {
                         // A small lift that eases to a stop, the swing that
                         // gathers speed into the wood, then the rebound.
-                        LinearKeyframe(quick ? hit : rest + 7, duration: quick ? Swing.quickImpactDelay / 2 : Swing.liftDuration,
+                        LinearKeyframe(quick ? hit : top, duration: quick ? Swing.quickImpactDelay / 2 : Swing.liftDuration,
                                        timingCurve: .easeOut)
                         LinearKeyframe(hit, duration: quick ? Swing.quickImpactDelay / 2 : Swing.impactDelay - Swing.liftDuration,
                                        timingCurve: .easeIn)
-                        if swing.lingers {
+                        if swing.holds {
+                            // Left on the wood: nothing moves, and nothing
+                            // runs, until the next swing lifts it.
+                            LinearKeyframe(hit, duration: 0.01)
+                        } else if swing.lingers {
                             // 压槌: rest on the wood, then lift without a bounce.
                             // A new swing can interrupt this quiet at any time.
                             LinearKeyframe(hit, duration: 0.42)
